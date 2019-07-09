@@ -141,6 +141,9 @@ void invokeIRQHandler_AckIRQ(irq_t irq)
      */
     plic_complete_claim(irq);
 #endif
+    /* @ivanv: This is from Yanyan's RISC-V HE changes I think, need
+       to check this. */
+    return;
 #else
 
 #if defined ENABLE_SMP_SUPPORT && defined CONFIG_ARCH_ARM
@@ -150,7 +153,6 @@ void invokeIRQHandler_AckIRQ(irq_t irq)
     }
 #endif
     maskInterrupt(false, irq);
-#endif
 }
 
 void invokeIRQHandler_SetIRQHandler(irq_t irq, cap_t cap, cte_t *slot)
@@ -217,9 +219,7 @@ void handleInterrupt(irq_t irq)
             printf("Undelivered IRQ: %d\n", (int)IRQT_TO_IRQ(irq));
 #endif
         }
-#ifndef CONFIG_ARCH_RISCV
         maskInterrupt(true, irq);
-#endif
         break;
     }
 

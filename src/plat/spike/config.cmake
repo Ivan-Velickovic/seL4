@@ -29,8 +29,8 @@ if(KernelPlatformSpike)
     endif()
     list(APPEND KernelDTSList "src/plat/spike/overlay-spike.dts")
     declare_default_headers(
-        TIMER_FREQUENCY 10000000 PLIC_MAX_NUM_INT 0
-        INTERRUPT_CONTROLLER drivers/irq/riscv_plic_dummy.h
+        TIMER_FREQUENCY 10000000 PLIC_MAX_NUM_INT 128
+        INTERRUPT_CONTROLLER drivers/irq/riscv_plic0.h
     )
 else()
     unset(KernelPlatformFirstHartID CACHE)
