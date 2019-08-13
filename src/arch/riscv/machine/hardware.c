@@ -162,6 +162,9 @@ static inline irq_t getActiveIRQ(void)
          */
         plic_complete_claim(irq);
 #endif
+        if (irq != irqInvalid) {
+            plic_complete_claim(irq);
+        }
 #ifdef ENABLE_SMP_SUPPORT
     } else if (sip & BIT(SIP_SSIP)) {
         sbi_clear_ipi();
