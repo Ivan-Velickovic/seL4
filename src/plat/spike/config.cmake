@@ -26,6 +26,7 @@ if(KernelPlatformSpike)
         list(APPEND KernelDTSList "tools/dts/spike32.dts")
     else()
         list(APPEND KernelDTSList "tools/dts/spike.dts")
+        list(APPEND KernelDTSList "src/plat/spike/overlay-spike.dts")
     endif()
     list(APPEND KernelDTSList "src/plat/spike/overlay-spike.dts")
     declare_default_headers(
