@@ -219,7 +219,9 @@ void handleInterrupt(irq_t irq)
             printf("Undelivered IRQ: %d\n", (int)IRQT_TO_IRQ(irq));
 #endif
         }
+#ifndef CONFIG_ARCH_RISCV
         maskInterrupt(true, irq);
+#endif
         break;
     }
 
