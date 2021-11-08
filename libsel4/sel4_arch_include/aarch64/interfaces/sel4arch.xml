@@ -44,6 +44,16 @@
         <member name="tpidr_el0"/>
         <member name="tpidrro_el0"/>
     </struct>
+    <struct name="seL4_ARM_SMCContext">
+        <member name="x0"/>
+        <member name="x1"/>
+        <member name="x2"/>
+        <member name="x3"/>
+        <member name="x4"/>
+        <member name="x5"/>
+        <member name="x6"/>
+        <member name="x7"/>
+    </struct>
     <interface name="seL4_ARM_VSpace" manual_name="Page Global Directory"
         cap_description="Capability to the top level translation table being operated on.">
         <method id="ARMVSpaceClean_Data" name="Clean_Data" manual_label="vspace_clean"
@@ -359,6 +369,20 @@
                     A copy of the <texttt text="_service"/> capability exists.
                 </description>
             </error>
+        </method>
+    </interface>
+    <interface name="seL4_ARM_SMC" manual_name="SMC" cap_description="Capability to allow threads to interact with SMC calls.">
+        <method id="ARMSMCCall" name="Call" manual_name="SMC Call" manual_label="smc_call">
+            <brief>
+                Tell the microkernel to make the real SMC call.
+            </brief>
+            <description>
+                <docref>See <autoref label="sec:read_write_registers"/></docref>
+            </description>
+            <param dir="in" name="smc_args" type="seL4_ARM_SMCContext"
+                description="The structure that has the provided arguments."/>
+            <param dir="out" name="smc_response" type="seL4_ARM_SMCContext"
+                description="The structure to capture the responses."/>
         </method>
     </interface>
 </api>
