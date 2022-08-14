@@ -249,7 +249,7 @@ static inline void write_fcsr(uint32_t value)
 #endif
 
 
-#ifdef CONFIG_RISCV_HE
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
 
 #define HSTATUS     0x600
 #define HEDELEG     0x602
@@ -641,7 +641,7 @@ static inline uint32_t hlvxwu(word_t addr)
 
 static inline void setVSpaceRoot(paddr_t addr, asid_t asid)
 {
-#ifdef CONFIG_RISCV_HE
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
     /* We just use the stage-2 translation */
     hgatp_t hgatp = hgatp_new(HGATP_MODE, asid, addr >> seL4_PageBits);
     write_hgatp(hgatp.words[0]);
@@ -662,7 +662,7 @@ static inline void setVSpaceRoot(paddr_t addr, asid_t asid)
 }
 
 
-#ifdef CONFIG_RISCV_HE
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
 /* Kernel still uses the normal stage-1 translation */
 static inline void setKernelVSpaceRoot(paddr_t addr, asid_t asid)
 {
