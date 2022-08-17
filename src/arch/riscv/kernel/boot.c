@@ -58,6 +58,7 @@ BOOT_CODE cap_t create_mapped_it_frame_cap(cap_t pd_cap, pptr_t pptr, vptr_t vpt
 
 BOOT_CODE static bool_t arch_init_freemem(region_t ui_reg,
                                           p_region_t dtb_p_reg,
+                                          p_region_t extra_device_p_reg,
                                           v_region_t it_v_reg,
                                           word_t extra_bi_size_bits)
 {
@@ -79,6 +80,15 @@ BOOT_CODE static bool_t arch_init_freemem(region_t ui_reg,
         res_reg[index] = paddr_to_pptr_reg(dtb_p_reg);
         index += 1;
     }
+
+    /* add the extra device region, if it is not empty */
+    if (extra_device_p_reg.start) {
+        res_reg[index] = paddr_to_pptr_reg(extra_device_p_reg);
+        index += 1;
+    }
+
+    res_reg[index].start = ui_reg.start;
+    res_reg[index].end = ui_reg.end;
 
     /* reserve the user image region */
     if (index >= ARRAY_SIZE(res_reg)) {
@@ -200,7 +210,9 @@ static BOOT_CODE bool_t try_init_kernel(
     sword_t pv_offset,
     vptr_t  v_entry,
     paddr_t dtb_phys_addr,
-    word_t  dtb_size
+    word_t  dtb_size,
+    paddr_t extra_device_addr,
+    word_t  extra_device_size
 )
 {
     cap_t root_cnode_cap;
@@ -214,6 +226,9 @@ static BOOT_CODE bool_t try_init_kernel(
     region_t ui_reg = paddr_to_pptr_reg((p_region_t) {
         ui_p_reg_start, ui_p_reg_end
     });
+    p_region_t extra_device_p_reg = (p_region_t) {
+        extra_device_addr, extra_device_addr + extra_device_size
+    };
     word_t extra_bi_size = 0;
     pptr_t extra_bi_offset = 0;
     vptr_t extra_bi_frame_vptr;
@@ -221,6 +236,7 @@ static BOOT_CODE bool_t try_init_kernel(
     vptr_t ipcbuf_vptr;
     create_frames_of_region_ret_t create_frames_ret;
     create_frames_of_region_ret_t extra_bi_ret;
+    seL4_SlotPos first_untyped_slot;
 
     /* convert from physical addresses to userland vptrs */
     v_region_t ui_v_reg = {
@@ -298,7 +314,7 @@ static BOOT_CODE bool_t try_init_kernel(
     }
 
     /* make the free memory available to alloc_region() */
-    if (!arch_init_freemem(ui_reg, dtb_p_reg, it_v_reg, extra_bi_size_bits)) {
+    if (!arch_init_freemem(ui_reg, dtb_p_reg, extra_device_p_reg, it_v_reg, extra_bi_size_bits)) {
         printf("ERROR: free memory management initialization failed\n");
         return false;
     }
@@ -433,11 +449,17 @@ static BOOT_CODE bool_t try_init_kernel(
 
     init_core_state(initial);
 
+    // @ivanv: comment
+    first_untyped_slot = ndks_boot.slot_pos_cur;
+    if (extra_device_addr) {
+        create_untypeds_for_region(root_cnode_cap, true, paddr_to_pptr_reg(extra_device_p_reg), first_untyped_slot);
+    }
+
     /* convert the remaining free memory into UT objects and provide the caps */
     if (!create_untypeds(
             root_cnode_cap,
             boot_mem_reuse_reg,
-            ndks_boot.slot_pos_cur)) {
+            first_untyped_slot)) {
         printf("ERROR: could not create untypteds for kernel image boot memory\n");
         return false;
     }
@@ -470,12 +492,14 @@ BOOT_CODE VISIBLE void init_kernel(
     sword_t pv_offset,
     vptr_t  v_entry,
     paddr_t dtb_addr_p,
-    uint32_t dtb_size
+    uint64_t dtb_size,
 #ifdef ENABLE_SMP_SUPPORT
     ,
     word_t hart_id,
     word_t core_id
 #endif
+    paddr_t extra_device_addr_p,
+    uint64_t extra_device_size
 )
 {
     bool_t result;
@@ -488,7 +512,9 @@ BOOT_CODE VISIBLE void init_kernel(
                                  pv_offset,
                                  v_entry,
                                  dtb_addr_p,
-                                 dtb_size);
+                                 dtb_size,
+                                 extra_device_addr_p,
+                                 extra_device_size);
     } else {
         result = try_init_kernel_secondary_core(hart_id, core_id);
     }
@@ -498,7 +524,9 @@ BOOT_CODE VISIBLE void init_kernel(
                              pv_offset,
                              v_entry,
                              dtb_addr_p,
-                             dtb_size);
+                             dtb_size,
+                             extra_device_addr_p,
+                             extra_device_size);
 #endif
     if (!result) {
         fail("ERROR: kernel init failed");
