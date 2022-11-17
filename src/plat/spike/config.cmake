@@ -33,6 +33,10 @@ if(KernelPlatformSpike)
         TIMER_FREQUENCY 10000000 PLIC_MAX_NUM_INT 128
         INTERRUPT_CONTROLLER drivers/irq/riscv_plic0.h
     )
+
+    if(KernelRiscVHypervisorSupport)
+        set(KernelRiscVNumVTimers 1)
+    endif()
 else()
     unset(KernelPlatformFirstHartID CACHE)
 endif()
