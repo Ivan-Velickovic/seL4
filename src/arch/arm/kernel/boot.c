@@ -332,8 +332,8 @@ static BOOT_CODE bool_t try_init_kernel(
     vptr_t  v_entry,
     paddr_t dtb_phys_addr,
     word_t  dtb_size,
-    paddr_t extra_device_addr_start,
-    word_t  extra_device_addr_size
+    paddr_t extra_device_addr,
+    word_t  extra_device_size
 )
 {
     cap_t root_cnode_cap;
@@ -344,7 +344,7 @@ static BOOT_CODE bool_t try_init_kernel(
         ui_p_reg_start, ui_p_reg_end
     };
     p_region_t extra_device_p_reg = (p_region_t) {
-        extra_device_addr_start, extra_device_addr_start + extra_device_addr_size
+        extra_device_addr, extra_device_addr + extra_device_size
     };
     region_t ui_reg = paddr_to_pptr_reg(ui_p_reg);
     word_t extra_bi_size = 0;
@@ -585,7 +585,7 @@ static BOOT_CODE bool_t try_init_kernel(
     init_core_state(initial);
 
     first_untyped_slot = ndks_boot.slot_pos_cur;
-    if (extra_device_addr_start) {
+    if (extra_device_addr) {
         create_untypeds_for_region(root_cnode_cap, true, paddr_to_pptr_reg(extra_device_p_reg), first_untyped_slot);
     }
 
