@@ -209,14 +209,14 @@ config_option(
 mark_as_advanced(KernelAArch64SErrorIgnore)
 
 config_option(
-    KernelAllowSMCCalls ALLOW_SMC_CALLS "Allow virtualized guests to make SMC calls. \
+    KernelAllowSMCCalls ALLOW_SMC_CALLS "Allow components to make SMC calls.
     WARNING: Some platforms require SMC calls to actually be made to boot VMs \
     correctly, however allowing SMC calls causes a couple of issues. Since seL4 \
     cannot pre-empt the supervisor the WCET is no longer guaranteed. Also, \
     since the supervisor is a higher privilege level and can make any change \
     in the system, the proofs can no longer be guaranteed."
     DEFAULT OFF
-    DEPENDS "KernelArmHypervisorSupport"
+    DEPENDS "KernelSel4ArchAarch64"
 )
 
 if(KernelAArch32FPUEnableContextSwitch OR KernelSel4ArchAarch64)
