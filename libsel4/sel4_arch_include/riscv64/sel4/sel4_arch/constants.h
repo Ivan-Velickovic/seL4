@@ -38,8 +38,10 @@
 #define seL4_HugePageBits      30
 #define seL4_TeraPageBits      39
 #define seL4_PageTableBits     12
-#define seL4_S2RootPageTableBits 14
+
 #ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+/* The root page table for stage2 translation is 16 KiB */
+#define seL4_S2RootPageTableBits    14
 #define seL4_VSpaceBits        seL4_S2RootPageTableBits
 #else
 #define seL4_VSpaceBits        seL4_PageTableBits
@@ -48,24 +50,21 @@
 #ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
 /* Assume 14-bit VMID for the RISCV64 */
 #define seL4_NumASIDPoolsBits   5
-#define seL4_ASIDPoolIndexBits  9
 #else
-
 #define seL4_NumASIDPoolsBits   7
-#define seL4_ASIDPoolIndexBits  9
-
 #endif
+#define seL4_ASIDPoolIndexBits  9
 #define seL4_ASIDPoolBits       12
 
 /* Untyped size limits */
 #define seL4_MinUntypedBits     4
 #define seL4_MaxUntypedBits     38
 
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
 /* VCPU-related definitions */
 #define seL4_RISCV_VCPUBits         10
 #define seL4_VCPUBits               10
-/* The root page table for stage2 translation is 16 KiB */
-#define seL4_S2RootPageTableBits    14
+#endif
 
 #ifndef __ASSEMBLER__
 
