@@ -97,7 +97,7 @@ if(KernelPlatformQEMURiscVVirt)
                     # scheme supports accessing a 34-bit physical address space,
                     # the 32-bit version of seL4 can access physical addresses
                     # in the 32-bit range only.
-                    set(QEMU_MEMORY "2048")
+                    set(QEMU_MEMORY "1024")
                 else()
                     # Having 3 GiB of memory as default seems a good trade-off.
                     # It's sufficient for test/demo systems, but still something
