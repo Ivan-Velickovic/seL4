@@ -155,7 +155,7 @@ static inline void vcpu_restore_reg_range(vcpu_t *vcpu, word_t start, word_t end
 static inline word_t vcpu_read_reg(vcpu_t *vcpu, word_t reg)
 {
     if (reg >= seL4_VCPUReg_Num || vcpu == NULL) {
-        fail("ARM/HYP: Invalid register index or NULL VCPU");
+        fail("RISCV/HYP: Invalid register index or NULL VCPU");
         return 0;
     }
     return vcpu->regs[reg];
@@ -164,7 +164,7 @@ static inline word_t vcpu_read_reg(vcpu_t *vcpu, word_t reg)
 static inline void vcpu_write_reg(vcpu_t *vcpu, word_t reg, word_t value)
 {
     if (reg >= seL4_VCPUReg_Num || vcpu == NULL) {
-        fail("ARM/HYP: Invalid register index or NULL VCPU");
+        fail("RISCV/HYP: Invalid register index or NULL VCPU");
         return;
     }
     vcpu->regs[reg] = value;
