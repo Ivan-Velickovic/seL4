@@ -307,7 +307,6 @@ cap_t Arch_createObject(object_t t, void *regionBase, word_t userSize, bool_t
 #ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
     case seL4_RISCV_VCPUObject:
         vcpu_init(VCPU_PTR(regionBase));
-        printf("region %p\n", regionBase);
         return cap_vcpu_cap_new(VCPU_REF(regionBase));
 #endif
     default:
