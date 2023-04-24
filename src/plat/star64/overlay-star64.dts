@@ -1,0 +1,12 @@
+/*
+ * Copyright 2023, Ivan Velickovic
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+/ {
+    chosen {
+        seL4,kernel-devices =
+            &{/soc/plic@c000000};
+    };
+};
