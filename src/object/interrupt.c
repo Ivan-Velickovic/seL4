@@ -144,7 +144,7 @@ void invokeIRQHandler_AckIRQ(irq_t irq)
     /* @ivanv: This is from Yanyan's RISC-V HE changes I think, need
        to check this. */
     return;
-#else
+#endif
 
 #if defined ENABLE_SMP_SUPPORT && defined CONFIG_ARCH_ARM
     if (IRQ_IS_PPI(irq) && IRQT_TO_CORE(irq) != getCurrentCPUIndex()) {
