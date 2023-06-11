@@ -82,9 +82,6 @@ BOOT_CODE static bool_t arch_init_freemem(region_t ui_reg,
         index += 1;
     }
 
-    res_reg[index].start = ui_reg.start;
-    res_reg[index].end = ui_reg.end;
-
     /* reserve the user image region */
     if (index >= ARRAY_SIZE(res_reg)) {
         printf("ERROR: no slot to add user image to reserved regions\n");
