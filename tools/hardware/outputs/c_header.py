@@ -71,7 +71,7 @@ static inline CONST word_t physBase(void)
 {% endfor %}
 
 {% if len(kernel_regions) > 0 %}
-static const kernel_frame_t BOOT_RODATA kernel_device_frames[] = {
+const kernel_frame_t BOOT_RODATA kernel_device_frames[] = {
     {% for group in kernel_regions %}
     {% if group.has_macro() %}
     {{ group.get_macro() }}
