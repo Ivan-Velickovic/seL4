@@ -31,8 +31,6 @@ void setNextPC(tcb_t *thread, word_t v)
 
 BOOT_CODE void map_kernel_devices(void)
 {
-    map_kernel_frame(0x00000000, PLIC_PPTR, VMKernelOnly);
-
     /* If there are no kernel device frames at all, then kernel_device_frames is
      * NULL. Thus we can't use ARRAY_SIZE(kernel_device_frames) here directly,
      * but have to use NUM_KERNEL_DEVICE_FRAMES that is defined accordingly.
