@@ -432,7 +432,7 @@ exception_t decodeVCPUSetTCB(cap_t cap, extra_caps_t extraCaps)
         current_syscall_error.type = seL4_TruncatedMessage;
         return EXCEPTION_SYSCALL_ERROR;
     }
-    tcbCap  = extraCaps.excaprefs[0]->cap;
+    tcbCap = extraCaps.excaprefs[0]->cap;
 
     if (cap_get_capType(tcbCap) != cap_thread_cap) {
         userError("TCB cap is not a TCB cap.");
