@@ -204,13 +204,6 @@ exception_t handleUnknownSyscall(word_t w)
     } /* end switch(w) */
 #endif /* CONFIG_ENABLE_BENCHMARKS */
 
-#ifdef CONFIG_PROFILER_ENABLE
-    if (w == SysProfilerRegisterThread) {
-        printf("We got to the syscall handling stub!\n");
-        return handle_SysProfilerRegisterThread();
-    }
-#endif /* CONFIG_PROFILER_ENABLE */
-
     MCS_DO_IF_BUDGET({
 #ifdef CONFIG_SET_TLS_BASE_SELF
         if (w == SysSetTLSBase)

@@ -304,11 +304,6 @@ struct tcb {
     /* 16 bytes (12 bytes aarch32) */
     benchmark_util_t benchmark;
 #endif
-
-#ifdef CONFIG_PROFILER_ENABLE
-    word_t tcbProfileId;
-#endif
-
 };
 typedef struct tcb tcb_t;
 

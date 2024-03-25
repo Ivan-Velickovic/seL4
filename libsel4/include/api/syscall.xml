@@ -76,10 +76,6 @@
             <syscall name="BenchmarkResetThreadUtilisation"  />
         </config>
         <config>
-            <condition><config var="CONFIG_PROFILER_ENABLE" /></condition>
-            <syscall name="ProfilerRegisterThread" />
-        </config>
-        <config>
             <condition>
                 <and>
                     <config var="CONFIG_DEBUG_BUILD"/>

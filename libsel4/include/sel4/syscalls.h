@@ -309,19 +309,6 @@ seL4_BenchmarkResetAllThreadsUtilisation(void);
 #endif
 /** @} */
 
-#ifdef CONFIG_PROFILER_ENABLE
-/**
- * @xmlonly <manual name="Register Thread For Profiling" label="sel4_profilerregisterthread" /> @endxmlonly
- * @brief Set an id in the calling thread's TCB to enable profiling
- * 
- * @param[in] tcb_cptr TCB cap pointer to the thread to enable profiling on.
- */
-
-LIBSEL4_INLINE_FUNC void
-seL4_ProfilerRegisterThread(seL4_Word thread_id);
-
-#endif
-
 #ifdef CONFIG_ARCH_X86
 /**
  * @defgroup X86SystemCalls X86 System Calls
