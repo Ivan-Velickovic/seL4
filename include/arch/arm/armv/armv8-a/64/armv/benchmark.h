@@ -19,9 +19,9 @@
 static inline void armv_enableOverflowIRQ(void)
 {
     uint32_t val;
-    MRS(PMINTENSET, val);
+    MRS("PMINTENSET_EL1", val);
     val |= BIT(CCNT_INDEX);
-    MSR(PMINTENSET, val);
+    MSR("PMINTENSET_EL1", val);
 }
 
 static inline void armv_handleOverflowIRQ(void);
