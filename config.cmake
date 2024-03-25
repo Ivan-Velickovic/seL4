@@ -413,10 +413,6 @@ config_option(
     DEFAULT OFF
 )
 
-if (ProfilerEnable)
-config_set(KernelLogBuffer KERNEL_LOG_BUFFER ON)
-endif()
-
 config_choice(
     KernelBenchmarks
     KERNEL_BENCHMARK

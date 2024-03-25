@@ -143,9 +143,7 @@ BOOT_CODE static void init_irqs(cap_t root_cnode_cap)
 
 #ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
 #ifdef KERNEL_PMU_IRQ
-#ifndef CONFIG_PROFILER_ENABLE
     setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, KERNEL_PMU_IRQ));
-#endif
 #if (defined CONFIG_PLAT_TX1 && defined ENABLE_SMP_SUPPORT)
 //SELFOUR-1252
 #error "This platform doesn't support tracking CPU utilisation on multicore"

@@ -3,12 +3,10 @@
 #include <armv/benchmark.h>
 #include <api/faults.h>
 #include <arch/arm/arch/64/mode/kernel/vspace.h>
-#include <sel4/config.h>
-
 #ifdef CONFIG_ENABLE_BENCHMARKS
+
 #ifdef CONFIG_PROFILER_ENABLE
 void armv_handleOverflowIRQ(void) {
-    printf("In the arm 8 handle overflow irq\n");
     // Halt the PMU
     uint32_t mask = 0;
 
@@ -24,15 +22,6 @@ void armv_handleOverflowIRQ(void) {
     mask |= (1 << 31);
     MSR("PMCNTENSET_EL0", (~mask));
 
-    if (NODE_STATE(ksCurThread) == NULL) {
-        printf("NULL current thread\n");
-        return;
-    }
-    
-    #ifdef CONFIG_KERNEL_LOG_BUFFER
-
-    // Check that this TCB has been marked to track
-
     // Get the PC 
     uint64_t pc = getRegister(NODE_STATE(ksCurThread), FaultIP);
     // Save the interrupt flags
@@ -41,38 +30,14 @@ void armv_handleOverflowIRQ(void) {
     uint32_t val = BIT(CCNT_INDEX);
     MSR(PMOVSR, val);
 
-    // Checking the log buffer exists, and is valid
-    if (ksUserLogBuffer == 0) {
-        userError("A user-level buffer has to be set before starting profiling.\
-                Use seL4_BenchmarkSetLogBuffer\n");
-        setRegister(NODE_STATE(ksCurThread), capRegister, seL4_IllegalOperation);
-        return EXCEPTION_SYSCALL_ERROR;
-    }
-
-    // Get the pmu sample structure in the log
-    pmu_sample_t *profLog = (pmu_sample_t *) KS_LOG_PPTR;
-
     // Unwinding the call stack, currently only supporting 4 prev calls (arbitrary size)
 
     // First, get the threadRoot capability based on the current tcb
     cap_t threadRoot = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbVTable)->cap;
 
-    // printf("current thread prio: %ld\n", NODE_STATE(ksCurThread)->tcbPriority);
-    // debug_printTCB(NODE_STATE(ksCurThread));
     /* lookup the vspace root */
     if (cap_get_capType(threadRoot) != cap_vspace_cap) {
         printf("Invalid vspace\n");
-        uint64_t init_cnt = 0xffffffffffffffff - 1200000;
-        asm volatile("msr pmccntr_el0, %0" : : "r" (init_cnt));
-        uint64_t val;
-
-        asm volatile("mrs %0, pmcr_el0" : "=r" (val));
-
-        val |= BIT(0);
-
-        asm volatile("isb; msr pmcr_el0, %0" : : "r" (val));
-
-        asm volatile("MSR PMCNTENSET_EL0, %0" : : "r" (BIT(31)));
         return;
     }
 
@@ -81,8 +46,10 @@ void armv_handleOverflowIRQ(void) {
     // Read the x29 register for the address of the current frame pointer
     word_t fp = getRegister(NODE_STATE(ksCurThread), X29);
 
+    word_t cc[4] = {0,0,0,0};
+
     // Loop and read the start of the frame pointer, save the lr value and load the next fp
-    for (int i = 0; i < MAX_CALL_DEPTH; i++) {
+    for (int i = 0; i < 4; i++) {
         // The LR should be one word above the FP
         word_t lr_addr = fp + sizeof(word_t);
 
@@ -93,7 +60,7 @@ void armv_handleOverflowIRQ(void) {
         if (read_fp.status == EXCEPTION_NONE && read_lr.status == EXCEPTION_NONE) {
             // Set the fp value to the next frame entry
             fp = read_fp.value;
-            profLog->ips[i] = read_lr.value;
+            cc[i] = read_lr.value;
             // If the fp is 0, then we have reached the end of the frame stack chain
             if (fp == 0) {
                 break;
@@ -104,22 +71,27 @@ void armv_handleOverflowIRQ(void) {
                    lr_addr);
             break;
         }        
-    }     
-    // Add the data to the profiler log buffer
+    } 
+    current_fault = seL4_Fault_PMUEvent_new(pc, irq_f);
+    
+    // Add the callstack to the message
 
-    profLog->ip = pc;
-    // Populate PID with whatever we registered inside the TCB
-    profLog->pid = 1;
-    profLog->time = getCurrentTime();
-    #ifdef ENABLE_SMP_SUPPORT
-    profLog->cpu = NODE_STATE(ksCurThread)->tcbAffinity;
-    #else
-    profLog->cpu = 0;
-    #endif
-    // The period is only known by the profiler.
-    profLog->period = 0;
-    #endif
- 
+    // Receiver here is the fault handler of the current thread
+    cap_t receiver_cap = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbFaultHandler)->cap;
+    endpoint_t *ep_ptr = EP_PTR(cap_endpoint_cap_get_capEPPtr(receiver_cap));
+    tcb_t *receiver = TCB_PTR(endpoint_ptr_get_epQueue_head(ep_ptr));
+    word_t *receiveIPCBuffer = lookupIPCBuffer(true, receiver);
+
+    setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_CC0, cc[0]);
+    setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_CC1, cc[1]);
+    setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_CC2, cc[2]);
+    setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_CC3, cc[3]);
+
+    if (isRunnable(NODE_STATE(ksCurThread))) {
+        handleFault(NODE_STATE(ksCurThread));
+        schedule();
+        activateThread();
+    }
 }
-#endif
+#endif 
 #endif

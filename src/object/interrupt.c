@@ -208,15 +208,6 @@ void handleInterrupt(irq_t irq)
         /* Merging the variable declaration and initialization into one line
          * requires an update in the proofs first. Might be a c89 legacy.
          */
-        #ifdef CONFIG_PROFILER_ENABLE
-            // Add check to pass to first stage PMU irq handler
-            #ifdef KERNEL_PMU_IRQ
-            if (IRQT_TO_IRQ(irq) == KERNEL_PMU_IRQ) {
-                printf("irq signal, handling kernel pmu irq!\n");
-                handleReservedIRQ(irq);
-            }
-            #endif
-        #endif
         cap_t cap;
         cap = intStateIRQNode[IRQT_TO_IDX(irq)].cap;
         if (cap_get_capType(cap) == cap_notification_cap &&

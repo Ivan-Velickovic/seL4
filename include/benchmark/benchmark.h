@@ -31,10 +31,6 @@ exception_t handle_SysBenchmarkResetAllThreadsUtilisation(void);
 #endif /* CONFIG_BENCHMARK_TRACK_UTILISATION */
 #endif /* CONFIG_ENABLE_BENCHMARKS */
 
-#ifdef CONFIG_PROFILER_ENABLE
-exception_t handle_SysProfilerRegisterThread(void);
-#endif
-
 #if CONFIG_MAX_NUM_TRACE_POINTS > 0
 #define TRACE_POINT_START(x) trace_point_start(x)
 #define TRACE_POINT_STOP(x)   trace_point_stop(x)
