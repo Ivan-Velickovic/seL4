@@ -70,7 +70,7 @@ void armv_handleOverflowIRQ(void) {
     word_t fp = getRegister(NODE_STATE(ksCurThread), X29);
 
     // Loop and read the start of the frame pointer, save the lr value and load the next fp
-    for (int i = 0; i < SEL4_PROF_MAX_CALL_DEPTH; i++) {
+    for (int i = 0; i < MAX_CALL_DEPTH; i++) {
         // The LR should be one word above the FP
         word_t lr_addr = fp + sizeof(word_t);
 
@@ -82,18 +82,17 @@ void armv_handleOverflowIRQ(void) {
             // Set the fp value to the next frame entry
             fp = read_fp.value;
             profLogs[0].ips[i] = read_lr.value;
-            profLogs[0].nr = i;
             // If the fp is 0, then we have reached the end of the frame stack chain
             if (fp == 0) {
                 break;
-            }
+            } 
         } else {
             // If we are unable to read, then we have reached the end of our stack unwinding
             printf("0x%"SEL4_PRIx_word": INVALID\n",
                    lr_addr);
             break;
         }        
-    }
+    }     
     // Add the data to the profiler log buffer
     profLogs[0].valid = 1;
     profLogs[0].ip = pc;
