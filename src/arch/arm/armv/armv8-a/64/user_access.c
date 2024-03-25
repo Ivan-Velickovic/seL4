@@ -17,8 +17,9 @@
 #define EL1PCEN  BIT(1)
 #define EL1PCTEN BIT(0)
 
-#define PMUSERENR_EL0_EN BIT(0)
-
+#define PMUSERENR_EL0_EN (BIT(0) | BIT(2))
+#define PMU_INT_EN BIT(31)
+#define CCNT_INDEX 31
 static void check_export_pmu(void)
 {
 #if defined CONFIG_EXPORT_PMU_USER || defined CONFIG_ENABLE_BENCHMARKS

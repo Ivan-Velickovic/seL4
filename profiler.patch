@@ -1,0 +1,539 @@
+commit 6e72befb37cc061e0cd44de1ced0a185bb99eaac
+Author: Krishnan Winter <krishnanwinter1@gmail.com>
+Date:   Fri Aug 4 12:37:47 2023 +1000
+
+    Working in prof support for aarch64.
+
+diff --git a/.vscode/settings.json b/.vscode/settings.json
+new file mode 100644
+index 000000000..44ecc4673
+--- /dev/null
++++ b/.vscode/settings.json
+@@ -0,0 +1,9 @@
++{
++    "files.associations": {
++        "config.h": "c",
++        "benchmark.h": "c",
++        "statedata.h": "c",
++        "smmuv2.h": "c",
++        "faults.h": "c"
++    }
++}
+\ No newline at end of file
+diff --git a/include/arch/arm/arch/64/mode/object/structures.bf b/include/arch/arm/arch/64/mode/object/structures.bf
+index 2922c89f3..9cb4c754d 100644
+--- a/include/arch/arm/arch/64/mode/object/structures.bf
++++ b/include/arch/arm/arch/64/mode/object/structures.bf
+@@ -228,6 +228,13 @@ block VPPIEvent {
+ }
+ #endif
+ 
++block PMUEvent {
++    field pc        64
++    field irq_f     32
++    padding         28
++    field seL4_FaultType 4
++}
++
+ -- VM attributes
+ 
+ block vm_attributes {
+diff --git a/include/arch/arm/arch/benchmark.h b/include/arch/arm/arch/benchmark.h
+index 140977fa8..114f0c161 100644
+--- a/include/arch/arm/arch/benchmark.h
++++ b/include/arch/arm/arch/benchmark.h
+@@ -32,8 +32,25 @@ static inline timestamp_t timestamp(void)
+ }
+ 
+ #ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
+-static inline void handleOverflowIRQ(void)
++static inline void handleOverflowIRQ(irq_t irq)
+ {
++// #ifdef CONFIG_KERNEL_MCS
++//     /* If the current task is currently enqueued it will not be able to
++//      * correctly receive a fault IPC message. This may occur due to the
++//      * budget check that happens early in the handleInterruptEntry.
++//      *
++//      * If the current thread does *not* have budget this interrupt is
++//      * ignored for now. As it is a level-triggered interrupt it shall
++//      * be re-raised (and not lost).
++//      */
++//     if (thread_state_get_tcbQueued(NODE_STATE(ksCurThread)->tcbState)) {
++//         printf("Ignoring irq in handleOverflowIRQ\n");
++//         return;
++//     }
++
++//     maskInterrupt(false, irq);
++
++// #endif
+     if (likely(NODE_STATE(benchmark_log_utilisation_enabled))) {
+         NODE_STATE(ksCurThread)->benchmark.utilisation += UINT32_MAX - NODE_STATE(ksCurThread)->benchmark.schedule_start_time;
+         NODE_STATE(ksCurThread)->benchmark.schedule_start_time = 0;
+diff --git a/include/arch/arm/arch/object/interrupt.h b/include/arch/arm/arch/object/interrupt.h
+index 05cbcfbdb..6921e38e9 100644
+--- a/include/arch/arm/arch/object/interrupt.h
++++ b/include/arch/arm/arch/object/interrupt.h
+@@ -21,7 +21,7 @@ static inline void handleReservedIRQ(irq_t irq)
+ 
+ #ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
+     if (IRQT_TO_IRQ(irq) == KERNEL_PMU_IRQ) {
+-        handleOverflowIRQ();
++        handleOverflowIRQ(irq);
+         return;
+     }
+ #endif /* CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT */
+diff --git a/include/arch/arm/armv/armv8-a/64/armv/benchmark.h b/include/arch/arm/armv/armv8-a/64/armv/benchmark.h
+index 39db5d1c1..6055e0131 100644
+--- a/include/arch/arm/armv/armv8-a/64/armv/benchmark.h
++++ b/include/arch/arm/armv/armv8-a/64/armv/benchmark.h
+@@ -19,16 +19,53 @@
+ static inline void armv_enableOverflowIRQ(void)
+ {
+     uint32_t val;
+-    MRS(PMINTENSET, val);
++    MRS("PMINTENSET_EL1", val);
+     val |= BIT(CCNT_INDEX);
+-    MSR(PMINTENSET, val);
+-}
++    MSR("PMINTENSET_EL1", val);
++    printf("WE ARE ENABLING OVERFLOW IRQ ON ARM8\n");
+ 
+-static inline void armv_handleOverflowIRQ(void)
+-{
+-    uint32_t val = BIT(CCNT_INDEX);
+-    MSR(PMOVSR, val);
+ }
+ 
++static inline void armv_handleOverflowIRQ(void);
++// {
++//     printf("This is the thread that caused the fault: %p\n", NODE_STATE(ksCurThread));
++//     uint32_t value;
++
++// 	/* Read */
++// 	asm volatile("mrs %0, pmovsclr_el0" : "=r" (value));
++
++//     printf("This is the value of the interrupt: %x\n", value);
++    
++//     uint64_t rr = 0;
++//     uint32_t r = 0;
++
++//     asm volatile("isb; mrs %0, pmccntr_el0" : "=r" (rr));
++//     printf("This is the current cycle counter: %llu\n", rr);
++
++//     asm volatile("isb; mrs %0, pmevcntr0_el0" : "=r" (r));
++//     printf("This is the current event counter 0: %d\n", r);
++//     asm volatile("isb; mrs %0, pmevcntr1_el0" : "=r" (r));
++//     printf("This is the current event counter 1: %d\n", r);
++//     asm volatile("isb; mrs %0, pmevcntr2_el0" : "=r" (r));
++//     printf("This is the current event counter 2: %d\n", r);
++//     asm volatile("isb; mrs %0, pmevcntr3_el0" : "=r" (r));
++//     printf("This is the current event counter 3: %d\n", r);
++//     asm volatile("isb; mrs %0, pmevcntr4_el0" : "=r" (r));
++//     printf("This is the current event counter 4: %d\n", r);
++//     // Halt the PMU
++//     asm volatile("msr pmcntenset_el0, %0" :: "r"(0 << 31));
++
++//     uint64_t init_cnt = 0;
++//     asm volatile("msr pmccntr_el0, %0" : : "r" (init_cnt));
++
++//     printf("This is the faultip: %lu\n", getRegister(NODE_STATE(ksCurThread), FaultIP));
++
++//     printf("This is the KERNEL PMU IRQ: %d\n", KERNEL_PMU_IRQ);
++
++//     handleFault(ksCurThread);
++//     uint32_t val = BIT(CCNT_INDEX);
++//     MSR(PMOVSR, val);
++// }
++
+ #endif /* CONFIG_ENABLE_BENCHMARKS */
+ 
+diff --git a/include/kernel/thread.h b/include/kernel/thread.h
+index 22eec9869..7e2ecd76e 100644
+--- a/include/kernel/thread.h
++++ b/include/kernel/thread.h
+@@ -275,7 +275,6 @@ static inline bool_t checkBudget(void)
+         }
+         return true;
+     }
+-
+     chargeBudget(NODE_STATE(ksConsumed), true);
+     return false;
+ }
+diff --git a/libsel4/arch_include/arm/sel4/arch/shared_types.bf b/libsel4/arch_include/arm/sel4/arch/shared_types.bf
+index a1d7e8eb9..acece97de 100644
+--- a/libsel4/arch_include/arm/sel4/arch/shared_types.bf
++++ b/libsel4/arch_include/arm/sel4/arch/shared_types.bf
+@@ -12,6 +12,8 @@ tagged_union seL4_Fault seL4_FaultType {
+     tag CapFault 1
+     tag UnknownSyscall 2
+     tag UserException 3
++    tag PMUEvent 10
++
+ #ifdef CONFIG_HARDWARE_DEBUG_API
+     tag DebugException 4
+ #endif
+diff --git a/libsel4/sel4_arch_include/aarch64/sel4/sel4_arch/constants.h b/libsel4/sel4_arch_include/aarch64/sel4/sel4_arch/constants.h
+index f056bb9bf..9bd1c17d9 100644
+--- a/libsel4/sel4_arch_include/aarch64/sel4/sel4_arch/constants.h
++++ b/libsel4/sel4_arch_include/aarch64/sel4/sel4_arch/constants.h
+@@ -118,6 +118,18 @@ typedef enum {
+ 
+ #endif /* CONFIG_ARM_HYPERVISOR_SUPPORT */
+ 
++typedef enum {
++    seL4_PMUEvent_PC,
++    seL4_PMUEvent_TIME_LOWER,
++    seL4_PMUEvent_TIME_UPPER,
++    seL4_PMUEvent_IRQ,
++    seL4_PMUEvent_CC0,
++    seL4_PMUEvent_CC1,
++    seL4_PMUEvent_CC2,
++    seL4_PMUEvent_CC3,
++    SEL4_FORCE_LONG_ENUM(seL4_PMUEvent_Msg),
++} seL4_PMUEvent_Msg;
++
+ #ifdef CONFIG_KERNEL_MCS
+ typedef enum {
+     seL4_TimeoutReply_FaultIP,
+diff --git a/libsel4/sel4_arch_include/aarch64/sel4/sel4_arch/types.bf b/libsel4/sel4_arch_include/aarch64/sel4/sel4_arch/types.bf
+index d063d3a3d..b0fb4beb4 100644
+--- a/libsel4/sel4_arch_include/aarch64/sel4/sel4_arch/types.bf
++++ b/libsel4/sel4_arch_include/aarch64/sel4/sel4_arch/types.bf
+@@ -91,6 +91,13 @@ block VPPIEvent {
+ }
+ #endif
+ 
++block PMUEvent {
++    padding 768
++    field pc       64
++    padding         60
++    field seL4_FaultType 4
++}
++
+ #ifdef CONFIG_HARDWARE_DEBUG_API
+ block DebugException {
+     padding 576
+diff --git a/src/arch/arm/api/faults.c b/src/arch/arm/api/faults.c
+index e262ec378..d163bc648 100644
+--- a/src/arch/arm/api/faults.c
++++ b/src/arch/arm/api/faults.c
+@@ -25,6 +25,11 @@ bool_t Arch_handleFaultReply(tcb_t *receiver, tcb_t *sender, word_t faultType)
+     case seL4_Fault_VPPIEvent:
+         return true;
+ #endif
++
++#ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
++    case seL4_Fault_PMUEvent:
++        return true;
++#endif
+     default:
+         fail("Invalid fault");
+     }
+@@ -57,6 +62,18 @@ word_t Arch_setMRs_fault(tcb_t *sender, tcb_t *receiver, word_t *receiveIPCBuffe
+         return setMR(receiver, receiveIPCBuffer, seL4_VPPIEvent_IRQ, seL4_Fault_VPPIEvent_get_irq_w(sender->tcbFault));
+ #endif
+ 
++#ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
++    case seL4_Fault_PMUEvent: {
++        ticks_t ccnt = getCurrentTime();
++        // Split timestamp into two
++        uint32_t lower_ccnt = (uint32_t)(ccnt & 0xffffffff);
++        uint32_t upper_ccnt = (uint32_t)((ccnt >> 32) & 0xffffffff);
++        setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_IRQ, seL4_Fault_PMUEvent_get_irq_f(sender->tcbFault));
++        setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_TIME_LOWER, lower_ccnt);
++        setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_TIME_UPPER, upper_ccnt);
++        return setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_PC, seL4_Fault_PMUEvent_get_pc(sender->tcbFault));
++    }
++#endif
+     default:
+         fail("Invalid fault");
+     }
+diff --git a/src/arch/arm/armv/armv8-a/64/user_access.c b/src/arch/arm/armv/armv8-a/64/user_access.c
+index ee94932af..2e06eee1d 100644
+--- a/src/arch/arm/armv/armv8-a/64/user_access.c
++++ b/src/arch/arm/armv/armv8-a/64/user_access.c
+@@ -17,14 +17,21 @@
+ #define EL1PCEN  BIT(1)
+ #define EL1PCTEN BIT(0)
+ 
+-#define PMUSERENR_EL0_EN BIT(0)
+-
++#define PMUSERENR_EL0_EN (BIT(0) | BIT(2))
++#define PMU_INT_EN BIT(31)
++#define CCNT_INDEX 31
+ static void check_export_pmu(void)
+ {
+ #if defined CONFIG_EXPORT_PMU_USER || defined CONFIG_ENABLE_BENCHMARKS
+     /* allow PL0 to access the PMU */
+     uint32_t val = PMUSERENR_EL0_EN;
+     MSR("PMUSERENR_EL0", val);
++    // MRS("PMINTENSET_EL1", val);
++    // val |= BIT(CCNT_INDEX);
++    // MSR("PMINTENSET_EL1", val);
++    // uint64_t r;
++    // asm volatile("mrs %0, PMINTENSET_EL1" : "=r" (r));
++    // printf("This is the status of the interrupt reg: %p\n", (void *)r);
+ #endif
+ }
+ 
+diff --git a/src/arch/arm/benchmark/benchmark.c b/src/arch/arm/benchmark/benchmark.c
+index 4f7091077..6b05a77a7 100644
+--- a/src/arch/arm/benchmark/benchmark.c
++++ b/src/arch/arm/benchmark/benchmark.c
+@@ -6,6 +6,9 @@
+ 
+ #include <benchmark/benchmark.h>
+ #include <arch/benchmark.h>
++#include <armv/benchmark.h>
++#include <api/faults.h>
++#include <arch/arm/arch/64/mode/kernel/vspace.h>
+ 
+ #if CONFIG_MAX_NUM_TRACE_POINTS > 0
+ timestamp_t ksEntries[CONFIG_MAX_NUM_TRACE_POINTS];
+@@ -31,8 +34,114 @@ void arm_init_ccnt(void)
+     SYSTEM_WRITE_WORD(PMCNTENSET, BIT(CCNT_INDEX));
+ #endif
+ 
++#ifdef KERNEL_PMU_IRQ
++    printf("KERNEL PMU IRQ is defined\n");
++    printf("This is the value of KERNEL PMU IRQ: %d\n", KERNEL_PMU_IRQ);
++#endif
++#ifdef CONFIG_BENCHMARK_TRACK_UTILISATION
++    printf("BENCHMARK TRACK UTIL is defined\n");
++#endif
++
++    printf("Attempting to enable arm pmu overflow\n");
+ #ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
++    printf("CONFIG ARM ENABLE PMU OVERFLOW INTERRUPT HAS BEEN ENABLED\n");
+     armv_enableOverflowIRQ();
+ #endif /* CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT */
+ }
+ #endif
++
++#ifdef CONFIG_ENABLE_BENCHMARKS
++void armv_handleOverflowIRQ(void) {
++    // Halt the PMU
++
++    uint32_t mask = 0;
++
++    /* Disable Performance Counter */
++    // MRS("PMCR_EL0", value);
++    mask = 0;
++    mask |= (1 << 0); /* Enable */
++    mask |= (1 << 1); /* Cycle counter reset */
++    mask |= (1 << 2); /* Reset all counters */
++    MSR("PMCR_EL0", (~mask));
++
++    /* Disable cycle counter register */
++    // MRS("PMCNTENSET_EL0", value);
++    mask = 0;
++    mask |= (1 << 31);
++    MSR("PMCNTENSET_EL0", (~mask));
++
++    // Get the PC 
++    uint64_t pc = getRegister(NODE_STATE(ksCurThread), FaultIP);
++    // Save the interrupt flags
++    uint32_t irq_f = 0;
++    MRS(PMOVSR, irq_f);
++    uint32_t val = BIT(CCNT_INDEX);
++    MSR(PMOVSR, val);
++
++    // Unwinding the call stack, currently only supporting 4 prev calls (arbitrary size)
++
++    // First, get the threadRoot capability based on the current tcb
++    cap_t threadRoot = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbVTable)->cap;
++
++    /* lookup the vspace root */
++    if (cap_get_capType(threadRoot) != cap_vtable_root_cap) {
++        printf("Invalid vspace\n");
++        return;
++    }
++
++    vspace_root_t *vspaceRoot = cap_vtable_root_get_basePtr(threadRoot);
++
++    // Read the x29 register for the address of the current frame pointer
++    word_t fp = getRegister(NODE_STATE(ksCurThread), X29);
++
++    word_t cc[4] = {0,0,0,0};
++
++    // Loop and read the start of the frame pointer, save the lr value and load the next fp
++    for (int i = 0; i < 4; i++) {
++        // The LR should be one word above the FP
++        word_t lr_addr = fp + sizeof(word_t);
++
++        // We need to traverse the frame stack chain. We want to save the value of the LR in the frame
++        // entry as part of our perf callchain, and then look at the next frame record. 
++        readWordFromVSpace_ret_t read_lr = readWordFromVSpace(vspaceRoot, lr_addr);
++        readWordFromVSpace_ret_t read_fp = readWordFromVSpace(vspaceRoot, fp);
++        if (read_fp.status == EXCEPTION_NONE && read_lr.status == EXCEPTION_NONE) {
++            // Set the fp value to the next frame entry
++            fp = read_fp.value;
++            cc[i] = read_lr.value;
++            
++            // If the fp is 0, then we have reached the end of the frame stack chain
++            if (fp == 0) {
++                break;
++            } 
++        } else {
++            // If we are unable to read, then we have reached the end of our stack unwinding
++            printf("0x%"SEL4_PRIx_word": INVALID\n",
++                   lr_addr);
++            break;
++        }        
++    } 
++
++    current_fault = seL4_Fault_PMUEvent_new(pc, irq_f);
++    
++    // Add the callstack to the message
++
++    // Receiver here is the fault handler of the current thread
++    cap_t receiver_cap = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbFaultHandler)->cap;
++    endpoint_t *ep_ptr = EP_PTR(cap_endpoint_cap_get_capEPPtr(receiver_cap));
++    tcb_t *receiver = TCB_PTR(endpoint_ptr_get_epQueue_head(ep_ptr));
++    word_t *receiveIPCBuffer = lookupIPCBuffer(true, receiver);
++
++    setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_CC0, cc[0]);
++    setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_CC1, cc[1]);
++    setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_CC2, cc[2]);
++    setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_CC3, cc[3]);
++
++    if (isRunnable(NODE_STATE(ksCurThread))) {
++        handleFault(NODE_STATE(ksCurThread));
++        schedule();
++        activateThread();
++    }
++}
++
++#endif
+diff --git a/src/arch/x86/api/faults.c b/src/arch/x86/api/faults.c
+index 8b9bd9bd8..329e1f06e 100644
+--- a/src/arch/x86/api/faults.c
++++ b/src/arch/x86/api/faults.c
+@@ -86,7 +86,7 @@ word_t handleKernelException(
+         word_t UNUSED stack = sp + i * sizeof(word_t);
+         printf("*0x%lx == 0x%lx\n", stack, *(word_t *)stack);
+     }
+-    printf("\nHalting...\n");
++    printf("\nseL4_Fault_VPPIEvent_get_irq_w\n");
+     halt();
+     UNREACHABLE();
+ }
+diff --git a/src/kernel/thread.c b/src/kernel/thread.c
+index 83a23d0d1..24bb99530 100644
+--- a/src/kernel/thread.c
++++ b/src/kernel/thread.c
+@@ -368,6 +368,19 @@ void schedule(void)
+             scheduleChooseNewThread();
+         } else {
+             tcb_t *candidate = NODE_STATE(ksSchedulerAction);
++            if (isSchedulable(candidate) == false) {
++                printf("Not scheduable in thread.c. Thread prio: %lu\n", candidate->tcbPriority);
++            }
++
++            if(thread_state_get_tcbInReleaseQueue(candidate->tcbState) == true) {
++                printf("not schedulable because of release queue\n");
++            } else if (candidate->tcbSchedContext == NULL) {
++                printf("no sched context\n");
++            } else if (candidate->tcbSchedContext->scRefillMax <= 0) {
++                printf("no refill left\n");
++            } else if (!isRunnable(candidate)) {
++                printf("This is thread state: %llu\n", thread_state_get_tsType(candidate->tcbState));
++            }
+             assert(isSchedulable(candidate));
+             /* Avoid checking bitmap when ksCurThread is higher prio, to
+              * match fast path.
+diff --git a/src/object/endpoint.c b/src/object/endpoint.c
+index 4dd876f2b..d59431140 100644
+--- a/src/object/endpoint.c
++++ b/src/object/endpoint.c
+@@ -85,6 +85,7 @@ void sendIPC(bool_t blocking, bool_t do_call, word_t badge,
+         if (do_call ||
+             seL4_Fault_ptr_get_seL4_FaultType(&thread->tcbFault) != seL4_Fault_NullFault) {
+             if (reply != NULL && (canGrant || canGrantReply)) {
++                // printf("Calling reply_push in sendIPC\n");
+                 reply_push(thread, dest, reply, canDonate);
+             } else {
+                 setThreadState(thread, ThreadState_Inactive);
+@@ -248,13 +249,16 @@ void receiveIPC(tcb_t *thread, cap_t cap, bool_t isBlocking)
+                 if ((canGrant || canGrantReply) && replyPtr != NULL) {
+                     bool_t canDonate = sender->tcbSchedContext != NULL
+                                        && seL4_Fault_get_seL4_FaultType(sender->tcbFault) != seL4_Fault_Timeout;
++                    // printf("Calling reply_push from recvIPC\n");
+                     reply_push(sender, thread, replyPtr, canDonate);
+                 } else {
+                     setThreadState(sender, ThreadState_Inactive);
+                 }
+             } else {
+                 setThreadState(sender, ThreadState_Running);
++                printf("receive ipc sender %lu\n", sender->tcbPriority);
+                 possibleSwitchTo(sender);
++                printf("after\n");
+                 assert(sender->tcbSchedContext == NULL || refill_sufficient(sender->tcbSchedContext, 0));
+             }
+ #else
+diff --git a/src/object/schedcontext.c b/src/object/schedcontext.c
+index 118865bde..6725b7f33 100644
+--- a/src/object/schedcontext.c
++++ b/src/object/schedcontext.c
+@@ -287,6 +287,7 @@ void schedContext_resume(sched_context_t *sc)
+     if (likely(sc) && isSchedulable(sc->scTcb)) {
+         if (!(refill_ready(sc) && refill_sufficient(sc, 0))) {
+             assert(!thread_state_get_tcbQueued(sc->scTcb->tcbState));
++            printf("calling postpone from schedContext_resume\n");
+             postpone(sc);
+         }
+     }
+diff --git a/src/object/tcb.c b/src/object/tcb.c
+index 3c3ae9d56..e2e310440 100644
+--- a/src/object/tcb.c
++++ b/src/object/tcb.c
+@@ -282,7 +282,6 @@ void tcbReleaseEnqueue(tcb_t *tcb)
+ {
+     assert(thread_state_get_tcbInReleaseQueue(tcb->tcbState) == false);
+     assert(thread_state_get_tcbQueued(tcb->tcbState) == false);
+-
+     tcb_t *before = NULL;
+     tcb_t *after = NODE_STATE_ON_CORE(ksReleaseHead, tcb->tcbAffinity);
+ 
+diff --git a/src/plat/imx8m-evk/overlay-imx8mm-evk.dts b/src/plat/imx8m-evk/overlay-imx8mm-evk.dts
+index e1a9a46f8..8455467fd 100644
+--- a/src/plat/imx8m-evk/overlay-imx8mm-evk.dts
++++ b/src/plat/imx8m-evk/overlay-imx8mm-evk.dts
+@@ -6,6 +6,7 @@
+ 
+ / {
+     chosen {
++		seL4,boot-cpu = <&{/cpus/cpu@0}>;
+         seL4,elfloader-devices =
+             "serial1",
+             &{/psci};
+@@ -13,7 +14,8 @@
+         seL4,kernel-devices =
+             "serial1",
+             &{/interrupt-controller@38800000},
+-            &{/timer};
++            &{/timer},
++            &{/pmu};
+     };
+ 
+     /* These devices exists in the SOC documentation, but not in the DTS from Linux */
+diff --git a/tools/bitfield_gen.py b/tools/bitfield_gen.py
+index c3331749b..585d6f62f 100755
+--- a/tools/bitfield_gen.py
++++ b/tools/bitfield_gen.py
+@@ -1353,6 +1353,7 @@ class TaggedUnion:
+                 if union_size is None:
+                     union_size = ref.size
+                 elif union_size != ref.size:
++                    print(f"This is the max size of the union: {union_size} and this is the ref size of {name}: {ref.size}")
+                     raise ValueError("Size mismatch for element %s"
+                                      " of tagged union %s" % (name, self.name))
+ 
+@@ -2387,6 +2388,7 @@ class Block:
+         self.base_bits = base_bits
+         self.base_sign_extend = base_sign_extend
+         if self.size % base != 0:
++            print(f"This is self.size: {self.size} and this is base: {base}")
+             raise ValueError("Size of block %s not a multiple of base"
+                              % self.name)
+         self.multiple = self.size // base

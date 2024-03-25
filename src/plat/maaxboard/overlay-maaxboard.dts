@@ -7,6 +7,7 @@
 
 / {
 	chosen {
+		seL4,boot-cpu = <&{/cpus/cpu@0}>;
 		seL4,elfloader-devices =
 			"serial0",
 			&{/psci};
@@ -14,7 +15,8 @@
 		seL4,kernel-devices =
 			"serial0",
 			&{/soc@0/interrupt-controller@38800000},
-			&{/timer};
+			&{/timer},
+			&{/pmu};
 	};
 
 	/* Redefine USB to use dwc3 driver.

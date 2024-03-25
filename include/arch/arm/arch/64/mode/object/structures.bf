@@ -210,6 +210,15 @@ block VPPIEvent {
 }
 #endif
 
+#ifdef CONFIG_PROFILER_ENABLE
+block PMUEvent {
+    field pc        64
+    field irq_f     32
+    padding         28
+    field seL4_FaultType 4
+}
+#endif
+
 -- VM attributes
 
 block vm_attributes {

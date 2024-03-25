@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "config.h": "c",
+        "benchmark.h": "c",
+        "statedata.h": "c",
+        "smmuv2.h": "c",
+        "faults.h": "c",
+        "vspace.h": "c"
+    }
+}

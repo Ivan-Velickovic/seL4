@@ -99,6 +99,7 @@ devices:
       - arm,cortex-a15-pmu
       - arm,cortex-a7-pmu
       - arm,cortex-a9-pmu
+      - arm,cortex-a53-pmu
     interrupts:
       KERNEL_PMU_IRQ: boot-cpu
   # Tegra SMMU (memory-controllers/nvidia,tegra30-mc.txt)

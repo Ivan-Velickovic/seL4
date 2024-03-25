@@ -275,7 +275,7 @@ static inline bool_t checkBudget(void)
         }
         return true;
     }
-
+    
     chargeBudget(NODE_STATE(ksConsumed), true);
     return false;
 }

@@ -32,7 +32,7 @@ static inline timestamp_t timestamp(void)
 }
 
 #ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
-static inline void handleOverflowIRQ(void)
+static inline void handleOverflowIRQ(irq_t irq)
 {
     if (likely(NODE_STATE(benchmark_log_utilisation_enabled))) {
         NODE_STATE(ksCurThread)->benchmark.utilisation += UINT32_MAX - NODE_STATE(ksCurThread)->benchmark.schedule_start_time;

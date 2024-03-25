@@ -25,6 +25,11 @@ bool_t Arch_handleFaultReply(tcb_t *receiver, tcb_t *sender, word_t faultType)
     case seL4_Fault_VPPIEvent:
         return true;
 #endif
+
+#ifdef CONFIG_PROFILER_ENABLE
+    case seL4_Fault_PMUEvent:
+        return true;
+#endif
     default:
         fail("Invalid fault");
     }
@@ -57,6 +62,18 @@ word_t Arch_setMRs_fault(tcb_t *sender, tcb_t *receiver, word_t *receiveIPCBuffe
         return setMR(receiver, receiveIPCBuffer, seL4_VPPIEvent_IRQ, seL4_Fault_VPPIEvent_get_irq_w(sender->tcbFault));
 #endif
 
+#ifdef CONFIG_PROFILER_ENABLE
+    case seL4_Fault_PMUEvent: {
+        ticks_t ccnt = getCurrentTime();
+        // Split timestamp into two
+        uint32_t lower_ccnt = (uint32_t)(ccnt & 0xffffffff);
+        uint32_t upper_ccnt = (uint32_t)((ccnt >> 32) & 0xffffffff);
+        setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_IRQ, seL4_Fault_PMUEvent_get_irq_f(sender->tcbFault));
+        setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_TIME_LOWER, lower_ccnt);
+        setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_TIME_UPPER, upper_ccnt);
+        return setMR(receiver, receiveIPCBuffer, seL4_PMUEvent_PC, seL4_Fault_PMUEvent_get_pc(sender->tcbFault));
+    }
+#endif
     default:
         fail("Invalid fault");
     }

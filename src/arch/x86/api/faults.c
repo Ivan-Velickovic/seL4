@@ -86,7 +86,7 @@ word_t handleKernelException(
         word_t UNUSED stack = sp + i * sizeof(word_t);
         printf("*0x%lx == 0x%lx\n", stack, *(word_t *)stack);
     }
-    printf("\nHalting...\n");
+    printf("\nseL4_Fault_VPPIEvent_get_irq_w\n");
     halt();
     UNREACHABLE();
 }

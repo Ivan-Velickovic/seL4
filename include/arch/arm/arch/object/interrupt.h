@@ -21,7 +21,7 @@ static inline void handleReservedIRQ(irq_t irq)
 
 #ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
     if (IRQT_TO_IRQ(irq) == KERNEL_PMU_IRQ) {
-        handleOverflowIRQ();
+        handleOverflowIRQ(irq);
         return;
     }
 #endif /* CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT */

@@ -9,6 +9,6 @@ cmake_minimum_required(VERSION 3.7.2)
 add_sources(
     DEP "KernelArchArmV8a"
     PREFIX src/arch/arm/armv/armv8-a/${KernelWordSize}
-    CFILES cache.c user_access.c
+    CFILES cache.c user_access.c benchmark.c
     ASMFILES machine_asm.S
 )
