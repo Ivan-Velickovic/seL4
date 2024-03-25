@@ -212,6 +212,7 @@ void handleInterrupt(irq_t irq)
             // Add check to pass to first stage PMU irq handler
             #ifdef KERNEL_PMU_IRQ
             if (IRQT_TO_IRQ(irq) == KERNEL_PMU_IRQ) {
+                printf("irq signal, handling kernel pmu irq!\n");
                 handleReservedIRQ(irq);
             }
             #endif

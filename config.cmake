@@ -413,6 +413,10 @@ config_option(
     DEFAULT OFF
 )
 
+if (ProfilerEnable)
+config_set(KernelLogBuffer KERNEL_LOG_BUFFER ON)
+endif()
+
 config_choice(
     KernelBenchmarks
     KERNEL_BENCHMARK
@@ -439,7 +443,7 @@ else()
 endif()
 
 # Reflect the existence of kernel Log buffer
-if(KernelBenchmarksTrackKernelEntries OR KernelBenchmarksTracepoints OR ProfilerEnable)
+if(KernelBenchmarksTrackKernelEntries OR KernelBenchmarksTracepoints)
     config_set(KernelLogBuffer KERNEL_LOG_BUFFER ON)
 else()
     config_set(KernelLogBuffer KERNEL_LOG_BUFFER OFF)
