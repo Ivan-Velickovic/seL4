@@ -1865,22 +1865,21 @@ void Arch_userStackTrace(tcb_t *tptr)
 #if defined(CONFIG_KERNEL_LOG_BUFFER)
 exception_t benchmark_arch_map_logBuffer(word_t frame_vaddr)
 {
+
+    // Check what level the page entry is in the table. Level 2 is where LargePages should exist.
+    assert(GET_KPT_INDEX(frame_vaddr, 1) == BIT(PT_INDEX_BITS) - 1);
+    assert(GET_KPT_INDEX(frame_vaddr, 2) == BIT(PT_INDEX_BITS) - 2);
+    
     lookupPTSlot_ret_t lu_ret;
     
     cap_t threadRoot = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbVTable)->cap;
+
     vspace_root_t *vspaceRoot = VSPACE_PTR(cap_vspace_cap_get_capVSBasePtr(threadRoot));
+    
+    /* faulting section */
     lu_ret = lookupPTSlot(vspaceRoot, frame_vaddr);
-
-    // Check if the lookup returned a valid page table entry
     if (!pte_ptr_get_valid(lu_ret.ptSlot)) {
-        userError("Invalid vaddr #%lu.", frame_vaddr);
-        return EXCEPTION_SYSCALL_ERROR;
-    }
-
-    // Check if the page table entry is of seL4_LargePageBits in size.
-    // The ptBitsLeft value is correspondant to the size of the page.
-    if (lu_ret.ptBitsLeft != seL4_LargePageBits) {
-        userError("Invalid frame size. The kernel expects 2M log buffer");
+        printf("Invalid page table lookup\n");
         return EXCEPTION_SYSCALL_ERROR;
     }
 
