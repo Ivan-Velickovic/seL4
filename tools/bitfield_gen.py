@@ -1353,7 +1353,6 @@ class TaggedUnion:
                 if union_size is None:
                     union_size = ref.size
                 elif union_size != ref.size:
-                    print(f"This is the max size of the union: {union_size} and this is the ref size of {name}: {ref.size}")
                     raise ValueError("Size mismatch for element %s"
                                      " of tagged union %s" % (name, self.name))
 
@@ -2388,7 +2387,6 @@ class Block:
         self.base_bits = base_bits
         self.base_sign_extend = base_sign_extend
         if self.size % base != 0:
-            print(f"This is self.size: {self.size} and this is base: {base}")
             raise ValueError("Size of block %s not a multiple of base"
                              % self.name)
         self.multiple = self.size // base

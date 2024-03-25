@@ -6,7 +6,6 @@
 
 / {
     chosen {
-		seL4,boot-cpu = <&{/cpus/cpu@0}>;
         seL4,elfloader-devices =
             "serial1",
             &{/psci};
@@ -14,8 +13,7 @@
         seL4,kernel-devices =
             "serial1",
             &{/interrupt-controller@38800000},
-            &{/timer},
-            &{/pmu};
+            &{/timer};
     };
 
     /* These devices exists in the SOC documentation, but not in the DTS from Linux */
