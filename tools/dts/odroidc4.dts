@@ -2877,12 +2877,6 @@
 		};
 	};
 
-	pmu {
-		compatible = "arm,cortex-a55-pmu";
-		interrupts = <0x00 0x89 0x04>;
-		interrupt-affinity = < 0x09 0x0a 0x0b 0x0c >;
-	};
-
 	opp-table {
 		compatible = "operating-points-v2";
 		opp-shared;
