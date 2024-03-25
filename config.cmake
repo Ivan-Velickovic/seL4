@@ -407,7 +407,8 @@ config_option(
 
 config_option(
     ProfilerEnable PROFILER_ENABLE
-    "Enable support for the seL4 Profiling framework."
+    "Enable support for the seL4 Profiling framework. Forwards PMU events to userspace as PMUEvent faults, with \
+    relevant information contained within the message registers. "
     DEPENDS "KernelBenchmarks"
     DEFAULT OFF
 )
