@@ -282,7 +282,6 @@ void tcbReleaseEnqueue(tcb_t *tcb)
 {
     assert(thread_state_get_tcbInReleaseQueue(tcb->tcbState) == false);
     assert(thread_state_get_tcbQueued(tcb->tcbState) == false);
-
     tcb_t *before = NULL;
     tcb_t *after = NODE_STATE_ON_CORE(ksReleaseHead, tcb->tcbAffinity);
 
