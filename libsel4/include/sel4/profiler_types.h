@@ -14,6 +14,7 @@ typedef struct pmu_sample {
     uint64_t time;          /* Timestamp */
     uint32_t cpu;           /* CPU affinity */
     uint64_t period;        /* Number of events per sample */
+    uint32_t irqFlag;
     uint64_t nr;            /* Depth of call stack */
     uint64_t ips[SEL4_PROF_MAX_CALL_DEPTH]; /* Call stack */
 } pmu_sample_t;

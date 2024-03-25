@@ -42,6 +42,13 @@ void armv_handleOverflowIRQ(void) {
     // Get the pmu sample structure in the log
     pmu_sample_t *profLogs = (pmu_sample_t *) KS_LOG_PPTR;
 
+    // Save the interrupt flags
+    uint32_t irq_f = 0;
+    MRS(PMOVSR, irq_f);
+    // uint32_t val = BIT(CCNT_INDEX);
+    // MSR(PMOVSR, val);
+    profLogs[0].irqFlag = irq_f;
+
     // Check that this TCB has been marked to track
     if (NODE_STATE(ksCurThread)->tcbProfileId == 0) {
         profLogs[0].valid = 0;

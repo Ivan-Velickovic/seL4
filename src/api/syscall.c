@@ -224,6 +224,12 @@ exception_t handleUnknownSyscall(word_t w)
         }
 #endif
         current_fault = seL4_Fault_UnknownSyscall_new(w);
+        int w_cast = (int) w;
+        // Multiply by one so that compiler doesn't complain about unused var
+        w_cast *= 1;
+        printf("This is the unknown syscall: %d\n", w_cast);
+        #ifdef CONFIG_ENABLE_BENCHMARKS
+        #endif
         handleFault(NODE_STATE(ksCurThread));
     })
 
