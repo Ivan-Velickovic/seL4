@@ -1863,22 +1863,41 @@ void Arch_userStackTrace(tcb_t *tptr)
 #endif /* CONFIG_PRINTING */
 
 #if defined(CONFIG_KERNEL_LOG_BUFFER)
-exception_t benchmark_arch_map_logBuffer(word_t frame_vaddr)
+exception_t benchmark_arch_map_logBuffer(word_t frame_cptr)
 {
-    printf("arch map logbuffer\n");
-    lookupPTSlot_ret_t lu_ret;
-    
-    cap_t threadRoot = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbVTable)->cap;
+    lookupCapAndSlot_ret_t lu_ret;
+    vm_page_size_t frameSize;
+    pptr_t  frame_pptr;
 
-    vspace_root_t *vspaceRoot = VSPACE_PTR(cap_vspace_cap_get_capVSBasePtr(threadRoot));
-    
     /* faulting section */
-    lu_ret = lookupPTSlot(vspaceRoot, frame_vaddr);
-    if (!pte_ptr_get_valid(lu_ret.ptSlot)) {
-        printf("Invalid page table lookup\n");
+    lu_ret = lookupCapAndSlot(NODE_STATE(ksCurThread), frame_cptr);
+
+    if (unlikely(lu_ret.status != EXCEPTION_NONE)) {
+        userError("Invalid cap #%lu.", frame_cptr);
+        current_fault = seL4_Fault_CapFault_new(frame_cptr, false);
+
         return EXCEPTION_SYSCALL_ERROR;
     }
-    ksUserLogBuffer = pte_page_ptr_get_page_base_address(lu_ret.ptSlot);
+
+    if (cap_get_capType(lu_ret.cap) != cap_frame_cap) {
+        userError("Invalid cap. Log buffer should be of a frame cap");
+        current_fault = seL4_Fault_CapFault_new(frame_cptr, false);
+
+        return EXCEPTION_SYSCALL_ERROR;
+    }
+
+    frameSize = cap_frame_cap_get_capFSize(lu_ret.cap);
+
+    if (frameSize != ARMLargePage) {
+        userError("Invalid frame size. The kernel expects 2M log buffer");
+        current_fault = seL4_Fault_CapFault_new(frame_cptr, false);
+
+        return EXCEPTION_SYSCALL_ERROR;
+    }
+
+    frame_pptr = cap_frame_cap_get_capFBasePtr(lu_ret.cap);
+
+    ksUserLogBuffer = pptr_to_paddr((void *) frame_pptr);
 
     *armKSGlobalLogPDE = pte_pte_page_new(
 #ifdef CONFIG_ARM_HYPERVISOR_SUPPORT

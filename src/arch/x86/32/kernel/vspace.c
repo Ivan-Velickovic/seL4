@@ -657,7 +657,7 @@ exception_t decodeX86ModeMapPage(word_t invLabel, vm_page_size_t page_size, cte_
 }
 
 #ifdef CONFIG_KERNEL_LOG_BUFFER
-exception_t benchmark_arch_map_logBuffer(word_t frame_vaddr)
+exception_t benchmark_arch_map_logBuffer(word_t frame_cptr)
 {
     lookupCapAndSlot_ret_t lu_ret;
     vm_page_size_t frameSize;

@@ -1620,7 +1620,7 @@ void Arch_userStackTrace(tcb_t *tptr)
 #endif /* CONFIG_PRINTING */
 
 #ifdef CONFIG_KERNEL_LOG_BUFFER
-exception_t benchmark_arch_map_logBuffer(word_t frame_vaddr)
+exception_t benchmark_arch_map_logBuffer(word_t frame_cptr)
 {
     lookupCapAndSlot_ret_t lu_ret;
     vm_page_size_t frameSize;

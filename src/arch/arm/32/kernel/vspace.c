@@ -2668,7 +2668,7 @@ exception_t decodeARMMMUInvocation(word_t invLabel, word_t length, cptr_t cptr,
 }
 
 #ifdef CONFIG_KERNEL_LOG_BUFFER
-exception_t benchmark_arch_map_logBuffer(word_t frame_vaddr)
+exception_t benchmark_arch_map_logBuffer(word_t frame_cptr)
 {
     lookupCapAndSlot_ret_t lu_ret;
     vm_page_size_t frameSize;

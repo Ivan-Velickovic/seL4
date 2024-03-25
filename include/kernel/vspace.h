@@ -9,6 +9,6 @@
 #include <arch/kernel/vspace.h>
 
 #ifdef CONFIG_KERNEL_LOG_BUFFER
-exception_t benchmark_arch_map_logBuffer(word_t frame_vaddr);
+exception_t benchmark_arch_map_logBuffer(word_t frame_cptr);
 #endif /* CONFIG_KERNEL_LOG_BUFFER */
 

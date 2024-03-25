@@ -75,13 +75,12 @@ exception_t handle_SysBenchmarkFinalizeLog(void)
 #ifdef CONFIG_KERNEL_LOG_BUFFER
 exception_t handle_SysBenchmarkSetLogBuffer(void)
 {
-    word_t frame_vaddr = getRegister(NODE_STATE(ksCurThread), capRegister);
-    
-    if (benchmark_arch_map_logBuffer(frame_vaddr) != EXCEPTION_NONE) {
-        printf("Exception raised\n");
+    word_t cptr_userFrame = getRegister(NODE_STATE(ksCurThread), capRegister);
+    if (benchmark_arch_map_logBuffer(cptr_userFrame) != EXCEPTION_NONE) {
         setRegister(NODE_STATE(ksCurThread), capRegister, seL4_IllegalOperation);
         return EXCEPTION_SYSCALL_ERROR;
     }
+
     setRegister(NODE_STATE(ksCurThread), capRegister, seL4_NoError);
     return EXCEPTION_NONE;
 }

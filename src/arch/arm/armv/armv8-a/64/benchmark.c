@@ -4,7 +4,6 @@
 #include <api/faults.h>
 #include <arch/arm/arch/64/mode/kernel/vspace.h>
 #include <sel4/config.h>
-#include <sel4/profiler_types.h>
 
 #ifdef CONFIG_ENABLE_BENCHMARKS
 #ifdef CONFIG_PROFILER_ENABLE
@@ -31,15 +30,8 @@ void armv_handleOverflowIRQ(void) {
     }
     
     #ifdef CONFIG_KERNEL_LOG_BUFFER
-    
-    // Get the pmu sample structure in the log
-    pmu_sample_t *profLog = (pmu_sample_t *) KS_LOG_PPTR;
 
     // Check that this TCB has been marked to track
-    if (NODE_STATE(ksCurThread)->tcbProfileId != 1) {
-        profLog->valid = 0;
-        return;
-    }
 
     // Get the PC 
     uint64_t pc = getRegister(NODE_STATE(ksCurThread), FaultIP);
@@ -54,14 +46,35 @@ void armv_handleOverflowIRQ(void) {
         userError("A user-level buffer has to be set before starting profiling.\
                 Use seL4_BenchmarkSetLogBuffer\n");
         setRegister(NODE_STATE(ksCurThread), capRegister, seL4_IllegalOperation);
-        // return EXCEPTION_SYSCALL_ERROR;
+        return EXCEPTION_SYSCALL_ERROR;
     }
 
+    // Get the pmu sample structure in the log
+    pmu_sample_t *profLog = (pmu_sample_t *) KS_LOG_PPTR;
 
     // Unwinding the call stack, currently only supporting 4 prev calls (arbitrary size)
 
     // First, get the threadRoot capability based on the current tcb
     cap_t threadRoot = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbVTable)->cap;
+
+    // printf("current thread prio: %ld\n", NODE_STATE(ksCurThread)->tcbPriority);
+    // debug_printTCB(NODE_STATE(ksCurThread));
+    /* lookup the vspace root */
+    if (cap_get_capType(threadRoot) != cap_vspace_cap) {
+        printf("Invalid vspace\n");
+        uint64_t init_cnt = 0xffffffffffffffff - 1200000;
+        asm volatile("msr pmccntr_el0, %0" : : "r" (init_cnt));
+        uint64_t val;
+
+        asm volatile("mrs %0, pmcr_el0" : "=r" (val));
+
+        val |= BIT(0);
+
+        asm volatile("isb; msr pmcr_el0, %0" : : "r" (val));
+
+        asm volatile("MSR PMCNTENSET_EL0, %0" : : "r" (BIT(31)));
+        return;
+    }
 
     vspace_root_t *vspaceRoot = VSPACE_PTR(cap_vspace_cap_get_capVSBasePtr(threadRoot));
 
@@ -93,7 +106,7 @@ void armv_handleOverflowIRQ(void) {
         }        
     }     
     // Add the data to the profiler log buffer
-    profLog->valid = 1;
+
     profLog->ip = pc;
     // Populate PID with whatever we registered inside the TCB
     profLog->pid = 1;
@@ -105,7 +118,6 @@ void armv_handleOverflowIRQ(void) {
     #endif
     // The period is only known by the profiler.
     profLog->period = 0;
-    profLog->irqFlag = irq_f;
     #endif
  
 }
