@@ -24,13 +24,7 @@ static inline void armv_enableOverflowIRQ(void)
     MSR(PMINTENSET, val);
 }
 
-#ifdef CONFIG_PROFILER_ENABLE
 static inline void armv_handleOverflowIRQ(void);
-#else
-static inline void armv_handleOverflowIRQ(void)
-{
-    uint32_t val = BIT(CCNT_INDEX);
-    MSR(PMOVSR, val);
-}
-#endif /* CONFIG_PROFILER_ENABLE */
+
 #endif /* CONFIG_ENABLE_BENCHMARKS */
+
