@@ -45,12 +45,12 @@ void armv_handleOverflowIRQ(void) {
     // Save the interrupt flags
     uint32_t irq_f = 0;
     MRS(PMOVSR, irq_f);
-    // uint32_t val = BIT(CCNT_INDEX);
-    // MSR(PMOVSR, val);
+    uint32_t val = BIT(CCNT_INDEX);
+    MSR(PMOVSR, val);
     profLogs[0].irqFlag = irq_f;
 
     // Check that this TCB has been marked to track
-    if (NODE_STATE(ksCurThread)->tcbProfileId == 0) {
+    if (NODE_STATE(ksCurThread)->tcbProfileId != 1) {
         profLogs[0].valid = 0;
         return;
     }
@@ -97,7 +97,7 @@ void armv_handleOverflowIRQ(void) {
     profLogs[0].valid = 1;
     profLogs[0].ip = pc;
     // Populate PID with whatever we registered inside the TCB
-    profLogs[0].pid = NODE_STATE(ksCurThread)->tcbProfileId;
+    profLogs[0].pid = 1;
     profLogs[0].time = getCurrentTime();
     #ifdef ENABLE_SMP_SUPPORT
     profLogs[0].cpu = NODE_STATE(ksCurThread)->tcbAffinity;

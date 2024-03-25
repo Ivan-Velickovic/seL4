@@ -780,18 +780,17 @@ LIBSEL4_INLINE_FUNC void seL4_BenchmarkResetAllThreadsUtilisation(void)
 #endif /* CONFIG_ENABLE_BENCHMARKS */
 
 #ifdef CONFIG_PROFILER_ENABLE
-LIBSEL4_INLINE_FUNC seL4_Error seL4_ProfilerRegisterThread(seL4_Word thread_id)
+LIBSEL4_INLINE_FUNC void seL4_ProfilerRegisterThread(seL4_Word thread_id)
 {
     seL4_Word unused0 = 0;
     seL4_Word unused1 = 0;
     seL4_Word unused2 = 0;
     seL4_Word unused3 = 0;
     seL4_Word unused4 = 0;
+    seL4_Word unused5 = 0;
 
-    arm_sys_send_recv(seL4_SysProfilerRegisterThread, thread_id, &thread_id, 0, &unused0, &unused1, &unused2, &unused3,
-                      &unused4, 0);
-
-    return (seL4_Error) thread_id;
+    arm_sys_send_recv(seL4_SysProfilerRegisterThread, 0, &unused0, 0, &unused1, &unused2, &unused3, &unused4,
+                      &unused5, 0);
 
 }
 #endif /* CONFIG_PROFILER_ENABLE */

@@ -317,7 +317,7 @@ seL4_BenchmarkResetAllThreadsUtilisation(void);
  * @param[in] tcb_cptr TCB cap pointer to the thread to enable profiling on.
  */
 
-LIBSEL4_INLINE_FUNC seL4_Error
+LIBSEL4_INLINE_FUNC void
 seL4_ProfilerRegisterThread(seL4_Word thread_id);
 
 #endif

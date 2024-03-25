@@ -162,9 +162,9 @@ exception_t handle_SysBenchmarkResetAllThreadsUtilisation(void)
 
 #ifdef CONFIG_PROFILER_ENABLE
 exception_t handle_SysProfilerRegisterThread(void) {
-    word_t thread_id = getRegister(NODE_STATE(ksCurThread), capRegister);
+    NODE_STATE(ksCurThread)->tcbProfileId = 1;
 
-    NODE_STATE(ksCurThread)->tcbProfileId = thread_id;
+    printf("we have set the tcb profile id to: %ld\n", NODE_STATE(ksCurThread)->tcbProfileId);
 
     return EXCEPTION_NONE;
 }

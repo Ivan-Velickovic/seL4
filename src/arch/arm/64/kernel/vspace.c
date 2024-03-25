@@ -1865,11 +1865,7 @@ void Arch_userStackTrace(tcb_t *tptr)
 #if defined(CONFIG_KERNEL_LOG_BUFFER)
 exception_t benchmark_arch_map_logBuffer(word_t frame_vaddr)
 {
-
-    // Check what level the page entry is in the table. Level 2 is where LargePages should exist.
-    assert(GET_KPT_INDEX(frame_vaddr, 1) == BIT(PT_INDEX_BITS) - 1);
-    assert(GET_KPT_INDEX(frame_vaddr, 2) == BIT(PT_INDEX_BITS) - 2);
-    
+    printf("arch map logbuffer\n");
     lookupPTSlot_ret_t lu_ret;
     
     cap_t threadRoot = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbVTable)->cap;
@@ -1882,7 +1878,6 @@ exception_t benchmark_arch_map_logBuffer(word_t frame_vaddr)
         printf("Invalid page table lookup\n");
         return EXCEPTION_SYSCALL_ERROR;
     }
-
     ksUserLogBuffer = pte_page_ptr_get_page_base_address(lu_ret.ptSlot);
 
     *armKSGlobalLogPDE = pte_pte_page_new(
