@@ -892,7 +892,7 @@ LIBSEL4_INLINE_FUNC seL4_Word seL4_BenchmarkFinalizeLog(void)
     return (seL4_Word) index_ret;
 }
 
-LIBSEL4_INLINE_FUNC seL4_Error seL4_BenchmarkSetLogBuffer(seL4_Word frame_cptr)
+LIBSEL4_INLINE_FUNC seL4_Error seL4_BenchmarkSetLogBuffer(seL4_Word frame_vaddr)
 {
     seL4_Word unused0 = 0;
     seL4_Word unused1 = 0;
@@ -900,10 +900,10 @@ LIBSEL4_INLINE_FUNC seL4_Error seL4_BenchmarkSetLogBuffer(seL4_Word frame_cptr)
     seL4_Word unused3 = 0;
     seL4_Word unused4 = 0;
 
-    riscv_sys_send_recv(seL4_SysBenchmarkSetLogBuffer, frame_cptr, &frame_cptr, 0, &unused0, &unused1, &unused2, &unused3,
+    riscv_sys_send_recv(seL4_SysBenchmarkSetLogBuffer, frame_vaddr, &frame_vaddr, 0, &unused0, &unused1, &unused2, &unused3,
                         &unused4, 0);
 
-    return (seL4_Error) frame_cptr;
+    return (seL4_Error) frame_vaddr;
 }
 
 LIBSEL4_INLINE_FUNC void seL4_BenchmarkNullSyscall(void)
