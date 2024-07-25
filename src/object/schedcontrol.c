@@ -129,6 +129,9 @@ static exception_t decodeSchedControl_ConfigureFlags(word_t length, cap_t cap, w
         return EXCEPTION_SYSCALL_ERROR;
     }
 
+    // printf("KERNEL: budget: %llu, period: %llu\n", budget_us, period_us);
+    // printf("KERNEL: budget ticks: %llu, period ticks: %llu\n", budget_ticks, period_ticks);
+
     if (extra_refills + MIN_REFILLS > refill_absolute_max(targetCap)) {
         current_syscall_error.type = seL4_RangeError;
         current_syscall_error.rangeErrorMin = 0;
