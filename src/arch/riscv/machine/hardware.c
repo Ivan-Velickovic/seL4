@@ -215,10 +215,6 @@ static inline irq_t getActiveIRQ(void)
          */
         plic_complete_claim(irq);
 #endif
-        // @ivanv: potentially a second claim on QEMU RISCV VIRT?
-        if (irq != irqInvalid) {
-            plic_complete_claim(irq);
-        }
 #ifdef ENABLE_SMP_SUPPORT
     } else if (sip & BIT(SIP_SSIP)) {
         sbi_clear_ipi();
