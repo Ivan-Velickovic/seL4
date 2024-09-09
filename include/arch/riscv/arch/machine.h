@@ -319,7 +319,7 @@ static inline void write_fcsr(uint32_t value)
 /* HU (hypervisor user mode) controls whether the virtual-machine load/store
  * instructions, HLV, HLVX, and HSV, can be used also in U-mode. When HU=1,
  * these instructions can be executed in U-mode the same as in HS-mode. When
- * HU=0, all hypervisor instructions cause an illegal instruction trap n U-mode
+ * HU=0, all hypervisor instructions cause an illegal instruction trap in U-mode
  */
 #define HSTATUS_HU      BIT(9)
 
