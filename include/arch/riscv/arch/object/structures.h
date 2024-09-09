@@ -90,8 +90,14 @@ static inline bool_t CONST cap_get_archCapIsPhysical(cap_t cap)
     case cap_asid_pool_cap:
         return true;
 
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    case cap_vcpu_cap:
+        return true;
+#endif
+
     default:
         /* unreachable */
+        assert(!"Unknown cap type");
         return false;
     }
 }
@@ -114,6 +120,11 @@ static inline word_t CONST cap_get_archCapSizeBits(cap_t cap)
 
     case cap_asid_pool_cap:
         return seL4_ASIDPoolBits;
+
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    case cap_vcpu_cap:
+        return seL4_VCPUBits;
+#endif
 
     default:
         assert(!"Unknown cap type");
@@ -141,6 +152,11 @@ static inline void *CONST cap_get_archCapPtr(cap_t cap)
 
     case cap_asid_pool_cap:
         return ASID_POOL_PTR(cap_asid_pool_cap_get_capASIDPool(cap));
+
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    case cap_vcpu_cap:
+        return VCPU_PTR(cap_vcpu_cap_get_capVCPUPtr(cap));
+#endif
 
     default:
         assert(!"Unknown cap type");
