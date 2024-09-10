@@ -644,6 +644,7 @@ static inline uint32_t hlvxwu(word_t addr)
 #error "Unsupported PT levels"
 #endif
 
+/* The mode encodings for SATP and HGATP are the same. */
 #define HGATP_MODE SATP_MODE
 
 static inline void setVSpaceRoot(paddr_t addr, asid_t asid)
