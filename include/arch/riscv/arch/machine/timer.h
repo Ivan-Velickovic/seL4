@@ -63,7 +63,12 @@ static inline ticks_t getCurrentTime(void)
 static inline void setDeadline(ticks_t deadline)
 {
     /* Setting the timer acknowledges any existing IRQs */
+#if CONFIG_RISCV_NUM_VTIMERS > 0
+    // TODO: use KERNEL_PREEMPT_VTIMER instead
+    setVTimer(0, deadline);
+#else
     sbi_set_timer(deadline);
+#endif
 }
 
 /* ack previous deadline irq */

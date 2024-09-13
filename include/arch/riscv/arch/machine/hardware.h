@@ -142,6 +142,7 @@ static inline void arch_clean_invalidate_caches(void)
 }
 
 #if CONFIG_RISCV_NUM_VTIMERS > 0
+void initVTimer(void);
 void setVTimer(word_t vtimer, uint64_t cycles);
 #endif
 #endif /* __ASSEMBLER__ */

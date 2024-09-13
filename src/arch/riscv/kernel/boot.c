@@ -138,6 +138,8 @@ BOOT_CODE static void init_cpu(void)
     initLocalIRQController();
 #ifndef CONFIG_KERNEL_MCS
     initTimer();
+#elif CONFIG_RISCV_NUM_VTIMERS > 0
+    initVTimer();
 #endif
 
     /* disable FPU access */

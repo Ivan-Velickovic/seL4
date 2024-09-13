@@ -81,7 +81,7 @@ static struct vtimer vtimers[CONFIG_MAX_NUM_NODES];
 
 #define KERNEL_PREEMPT_VTIMER 0
 
-static void initVTimer(void)
+void initVTimer(void)
 {
     word_t core_id = CURRENT_CPU_INDEX();
     for (int i = 0; i < NUM_VTIMERS; i++) {
