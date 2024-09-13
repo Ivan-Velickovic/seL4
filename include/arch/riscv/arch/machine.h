@@ -604,8 +604,7 @@ static inline void write_vsatp(word_t v)
 
 static inline void hfence(void)
 {
-    /* v0.4 hfence.gvma instruction */
-    asm volatile(".word 0x62000073" ::: "memory");
+    asm volatile("hfence.gvma" ::: "memory");
 }
 
 static inline uint32_t hlvw(word_t addr)

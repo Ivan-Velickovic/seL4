@@ -126,6 +126,12 @@ elseif(KernelArchRiscV)
     # enabled
     string(APPEND _riscv_march "c")
 
+    # In hypervisor mode we need to use HS-mode instructions that are part of the
+    # H-extension.
+    if(KernelRiscVHypervisorSupport)
+        string(APPEND _riscv_march "h")
+    endif()
+
     # Determine if GNU toolchain is used and if yes, whether GCC version >= 11.3 (implies binutils version >= 2.38)
     if(
         CMAKE_ASM_COMPILER_ID STREQUAL "GNU"
