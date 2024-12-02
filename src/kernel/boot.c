@@ -228,6 +228,7 @@ BOOT_CODE static void create_rootserver_objects(pptr_t start, v_region_t it_v_re
     compile_assert(invalid_seL4_ASIDPoolBits, seL4_ASIDPoolBits == seL4_PageBits);
     rootserver.asid_pool = alloc_rootserver_obj(seL4_ASIDPoolBits, 1);
     rootserver.ipc_buf = alloc_rootserver_obj(seL4_PageBits, 1);
+    printf("rootserver.ipc_buf: 0x%lx, 0x%lx\n", rootserver.ipc_buf, pptr_to_paddr((void *)rootserver.ipc_buf));
     /* The boot info size must be at least one page. Due to the hard-coded order
      * of allocations used in the current implementation here, it can't be any
      * bigger.
