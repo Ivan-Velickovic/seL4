@@ -35,6 +35,11 @@ word_t Arch_setMRs_fault(tcb_t *sender, tcb_t *receiver, word_t *receiveIPCBuffe
 {
     switch (faultType) {
     case seL4_Fault_VMFault: {
+        printf("seL4_VMFault_IP(%d): 0x%lx\n", seL4_VMFault_IP, getRestartPC(sender));
+        printf("seL4_VMFault_Instruction(%d): 0x%llx\n", seL4_VMFault_Instruction, seL4_Fault_VMFault_get_instruction(sender->tcbFault));
+        printf("seL4_VMFault_Addr(%d): 0x%llx\n", seL4_VMFault_Addr, seL4_Fault_VMFault_get_instructionFault(sender->tcbFault));
+        printf("seL4_VMFault_FSR(%d): 0x%llx\n", seL4_VMFault_FSR, seL4_Fault_VMFault_get_FSR(sender->tcbFault));
+
         setMR(receiver, receiveIPCBuffer, seL4_VMFault_IP, getRestartPC(sender));
 #ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
         setMR(receiver, receiveIPCBuffer, seL4_VMFault_Instruction,
