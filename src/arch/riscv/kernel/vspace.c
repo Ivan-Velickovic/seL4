@@ -677,6 +677,7 @@ void setVMRoot(tcb_t *tcb)
         return;
     }
 
+    printf("vspace root: 0x%llx priority of tcb: %lu\n", addrFromPPtr(lvl1pt), tcb->tcbPriority);
     setVSpaceRoot(addrFromPPtr(lvl1pt), asid);
 #ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
     vcpu_switch(tcb->tcbArch.tcbVCPU);
