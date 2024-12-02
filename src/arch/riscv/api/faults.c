@@ -47,11 +47,11 @@ word_t Arch_setMRs_fault(tcb_t *sender, tcb_t *receiver, word_t *receiveIPCBuffe
                 seL4_Fault_VMFault_get_instruction(sender->tcbFault));
 #endif
         setMR(receiver, receiveIPCBuffer, seL4_VMFault_Addr,
-              seL4_Fault_VMFault_get_address(sender->tcbFault));
+              seL4_Fault_VMFault_get_FSR(sender->tcbFault));
         setMR(receiver, receiveIPCBuffer, seL4_VMFault_PrefetchFault,
               seL4_Fault_VMFault_get_instructionFault(sender->tcbFault));
         return setMR(receiver, receiveIPCBuffer, seL4_VMFault_FSR,
-                     seL4_Fault_VMFault_get_FSR(sender->tcbFault));
+                     0x100000000);
     }
 #ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
     case seL4_Fault_VCPUFault:
