@@ -195,8 +195,9 @@ word_t Arch_getObjectSize(word_t t)
 {
     switch (t) {
     case seL4_RISCV_4K_Page:
-    case seL4_RISCV_PageTableObject:
         return seL4_PageBits;
+    case seL4_RISCV_PageTableObject:
+        return 14;
     case seL4_RISCV_Mega_Page:
         return seL4_LargePageBits;
 #if CONFIG_PT_LEVELS > 2
