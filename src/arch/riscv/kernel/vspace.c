@@ -304,7 +304,11 @@ BOOT_CODE cap_t create_it_address_space(cap_t root_cnode_cap, v_region_t it_v_re
 
 BOOT_CODE void activate_kernel_vspace(void)
 {
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    setKernelVSpaceRoot(kpptr_to_paddr(&kernel_root_pageTable), 0);
+#else
     setVSpaceRoot(kpptr_to_paddr(&kernel_root_pageTable), 0);
+#endif
 }
 
 BOOT_CODE void write_it_asid_pool(cap_t it_ap_cap, cap_t it_lvl1pt_cap)
@@ -414,25 +418,102 @@ lookupPTSlot_ret_t lookupPTSlot(pte_t *lvl1pt, vptr_t vptr)
     return ret;
 }
 
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+/* We get the actual faulting instruction, so that the user-mode
+ * VMM does not need to do nested page table walking.
+ */
+uint32_t fetch_faulting_instruction(vm_fault_type_t type)
+{
+    word_t hstatus = read_hstatus();
+
+    if (((hstatus & HSTATUS_GVA) && (type == RISCVLoadGuestPageFault || type == RISCVStoreGuestPageFault)) ||
+        (hstatus & HSTATUS_SPV && type == RISCVInstructionIllegal)) {
+        word_t inst = 0;
+        inst = read_htinst();
+#if 0
+        word_t pc = getRestartPC(NODE_STATE(ksCurThread));
+        printf("type %d pc %lx %lx htval %lx\n", (int)type, pc, inst, read_htval());
+        asm volatile(
+                "li a5, 1\n\t"
+                "csrrs a4, "STRINGIFY(HSTATUS)", a5\n\t"
+                "lw %0, (%1)\n\t"
+                "csrw "STRINGIFY(HSTATUS)", a4\n\t"
+                : "=r"(inst)
+                : "r"(pc)
+                : "a4", "a5", "memory"
+                );
+#endif
+        return inst;
+    }
+
+    return 0;
+}
+#endif
+
 exception_t handleVMFault(tcb_t *thread, vm_fault_type_t vm_faultType)
 {
     uint64_t addr;
 
     addr = read_stval();
 
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    uint32_t instruction = 0;
+#endif
+
     switch (vm_faultType) {
+
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    case RISCVLoadPageFault:
+    case RISCVLoadAccessFault:
+        current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVLoadAccessFault, false);
+        return EXCEPTION_FAULT;
+
+    case RISCVStorePageFault:
+    case RISCVStoreAccessFault:
+        current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVStoreAccessFault, false);
+        return EXCEPTION_FAULT;
+
+    case RISCVInstructionPageFault:
+    case RISCVInstructionAccessFault:
+        current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVInstructionAccessFault, true);
+        return EXCEPTION_FAULT;
+
+    /* For guest page fault, guest physical address faulted is used. */
+    case RISCVLoadGuestPageFault:
+        addr = read_htval();
+        addr <<= 2;
+        instruction = fetch_faulting_instruction(vm_faultType);
+        current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVLoadGuestPageFault, false);
+        return EXCEPTION_FAULT;
+
+    case RISCVStoreGuestPageFault:
+        addr = read_htval();
+        addr <<= 2;
+        instruction = fetch_faulting_instruction(vm_faultType);
+        current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVStoreGuestPageFault, false);
+        return EXCEPTION_FAULT;
+
+    case RISCVInstructionGuestPageFault:
+        addr = read_htval();
+        addr <<= 2;
+        current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVInstructionGuestPageFault, true);
+        return EXCEPTION_FAULT;
+#else
     case RISCVLoadPageFault:
     case RISCVLoadAccessFault:
         current_fault = seL4_Fault_VMFault_new(addr, RISCVLoadAccessFault, false);
         return EXCEPTION_FAULT;
+
     case RISCVStorePageFault:
     case RISCVStoreAccessFault:
         current_fault = seL4_Fault_VMFault_new(addr, RISCVStoreAccessFault, false);
         return EXCEPTION_FAULT;
+
     case RISCVInstructionPageFault:
     case RISCVInstructionAccessFault:
         current_fault = seL4_Fault_VMFault_new(addr, RISCVInstructionAccessFault, true);
         return EXCEPTION_FAULT;
+#endif
 
     default:
         fail("Invalid VM fault type");
@@ -599,6 +680,9 @@ void setVMRoot(tcb_t *tcb)
     }
 
     setVSpaceRoot(addrFromPPtr(lvl1pt), asid);
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    vcpu_switch(tcb->tcbArch.tcbVCPU);
+#endif
 }
 
 bool_t CONST isValidVTableRoot(cap_t cap)

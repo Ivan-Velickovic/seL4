@@ -74,12 +74,22 @@ enum vm_fault_type {
     RISCVAddressMisaligned = 6,
     RISCVStoreAccessFault = 7,
     RISCVEnvCall = 8,
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    RISCVEnvHypCall = 10,
+#endif
     /* 9-11 reserved */
     RISCVInstructionPageFault = 12,
     RISCVLoadPageFault = 13,
     /* 14 - reserved */
     RISCVStorePageFault = 15
                           /* >= 16 reserved */
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    ,
+    RISCVInstructionGuestPageFault = 20,
+    RISCVLoadGuestPageFault = 21,
+    RISCVVirtualInstruction = 22,
+    RISCVStoreGuestPageFault = 23,
+#endif
 };
 typedef word_t vm_fault_type_t;
 
@@ -130,6 +140,10 @@ static inline void arch_clean_invalidate_caches(void)
 {
     /* RISC-V doesn't have an architecture defined way of flushing caches */
 }
+
+#if CONFIG_RISCV_NUM_VTIMERS > 0
+void setVTimer(word_t vtimer, uint64_t cycles);
+#endif
 #endif /* __ASSEMBLER__ */
 
 #define LOAD_S STRINGIFY(LOAD)

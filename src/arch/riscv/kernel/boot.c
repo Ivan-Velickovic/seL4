@@ -145,6 +145,11 @@ BOOT_CODE static void init_cpu(void)
 
 #ifdef CONFIG_HAVE_FPU
     init_fpu();
+    activate_kernel_vspace();
+#endif
+
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    vcpu_boot_init();
 #endif
 }
 

@@ -69,6 +69,21 @@ elseif(KernelWordSize EQUAL 64)
     set(KernelCtz64 ON CACHE BOOL "")
 endif()
 
+config_option(
+    KernelRiscVHypervisorSupport RISCV_HYPERVISOR_SUPPORT
+    "Build as Hypervisor. Utilise RISC-V H-Extension (v0.6.1) to build the kernel as a hypervisor"
+    DEFAULT OFF
+    DEPENDS "KernelArchRiscV"
+)
+
+config_string(
+    KernelRiscVNumVTimers RISCV_NUM_VTIMERS
+    "The number of virtual timers multiplexing the machine-mode timer"
+    DEFAULT 0
+    DEPENDS "KernelArchRiscV"
+    UNQUOTE
+)
+
 if(KernelSel4ArchRiscV32)
     set(KernelPTLevels 2 CACHE STRING "" FORCE)
 endif()
@@ -122,6 +137,7 @@ add_sources(
         object/objecttype.c
         object/tcb.c
         smp/ipi.c
+        object/vcpu.c
     ASMFILES head.S traps.S
 )
 

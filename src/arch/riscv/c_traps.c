@@ -132,6 +132,20 @@ void VISIBLE NORETURN c_handle_exception(void)
     case RISCVInstructionPageFault:
         handleVMFaultEvent(scause);
         break;
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    case RISCVEnvHypCall:
+    case RISCVVirtualInstruction:
+        handleVCPUFault(scause);
+        break;
+    case RISCVInstructionIllegal:
+        handleUserLevelFault(scause, fetch_faulting_instruction(scause));
+        break;
+    case RISCVInstructionGuestPageFault:
+    case RISCVLoadGuestPageFault:
+    case RISCVStoreGuestPageFault:
+        handleVMFaultEvent(scause);
+        break;
+#endif
     default:
 #ifdef CONFIG_HAVE_FPU
         if (!isFpuEnable()) {

@@ -182,7 +182,12 @@ static inline void plic_init_controller(void)
             readl(PLIC_PPTR_BASE + plic_claim_offset(PLIC_HART_ID, PLIC_SVC_CONTEXT));
             writel(i, PLIC_PPTR_BASE + plic_claim_offset(PLIC_HART_ID, PLIC_SVC_CONTEXT));
         }
+        /* Disable interrupts */
+        plic_mask_irq(true, i);
     }
+
+    /* Set threshold to zero */
+    writel(0, (PLIC_PPTR_BASE + plic_thres_offset(PLIC_HART_ID, PLIC_SVC_CONTEXT)));
 
     /* Set the priorities of all interrupts to 1 */
     for (int i = 1; i <= PLIC_MAX_IRQ; i++) {

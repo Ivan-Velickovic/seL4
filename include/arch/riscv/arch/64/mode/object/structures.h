@@ -7,3 +7,4 @@
 
 #pragma once
 
+#define VCPU_SIZE_BITS      seL4_VCPUBits

@@ -9,6 +9,7 @@
 #pragma once
 
 #ifndef __ASSEMBLER__
+#include <config.h>
 #include <arch/types.h>
 #include <arch/object/structures.h>
 #include <arch/machine/hardware.h>
@@ -190,11 +191,23 @@ static inline word_t read_sstatus(void)
     return temp;
 }
 
+/** MODIFIES: */
+/** DONT_TRANSLATE */
+static inline void write_sstatus(word_t value)
+{
+    asm volatile("csrw sstatus, %0" :: "r"(value));
+}
+
 static inline word_t read_sip(void)
 {
     word_t temp;
     asm volatile("csrr %0, sip" : "=r"(temp));
     return temp;
+}
+
+static inline void write_sip(word_t value)
+{
+    asm volatile("csrw sip, %0" :: "r"(value));
 }
 
 static inline void write_sie(word_t value)
@@ -242,6 +255,385 @@ static inline void write_fcsr(uint32_t value)
 }
 #endif
 
+
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+
+#define HSTATUS     0x600
+#define HEDELEG     0x602
+#define HIDELEG     0x603
+#define HIE         0x604
+#define HCOUNTEREN  0x606
+#define HGEIE       0x607
+#define HTVAL       0x643
+#define HVIP        0x645
+#define HIP         0x644
+#define HTINST      0x64A
+#define HGEIP       0xE12
+#define HGATP       0x680
+#define HTIMEDELTA  0x605
+#define HTIMEDELTAH 0x615
+
+#define VSSTATUS    0x200
+#define VSIE        0x204
+#define VSTVEC      0x205
+#define VSSCRATCH   0x240
+#define VSEPC       0x241
+#define VSCAUSE     0x242
+#define VSTVAL      0x243
+#define VSIP        0x244
+#define VSATP       0x280
+
+/* The SPRV bit modifieds the privilege with which loads and stores execute
+ * when not in M-mode. When SPRV=0, translation and protection behave as normal.
+ * When SPRV=1, load and store memory addresses are translated and protected
+ * as though the current virtualization mode were set to hstatus.SPV and
+ * the current privilege mode were set to the HS-level SPP (sstatus.SPP when
+ * V=0, or bsstatus.SPP when V=1).
+ */
+#define HSTATUS_SPRV    BIT(0)
+
+/* GVA (guest virtual address) is written by the implementation whenever a trap
+ * is taken into HS-mode. For any trap (breakpoint, address misaligned, access
+ * fault, page fault, or guest page fault) that writes a guest virtual address
+ * to stval, GVA is ste to 1. For any other trap to HS-mode, GVA is set to 0.
+ */
+#define HSTATUS_GVA     BIT(6)
+
+/* SPV (supervisor previous virtualization mode) is written by the implementation
+ * whenever a trap is taken into HS-mode. Just as the SPP bit in sstatus is set to
+ * the privilege mode at the time of the trap, the SPV bit in hstatus is set to
+ * the value of the virtualization mode V at the time of the trap. When an SERT
+ * instruction is executed, when V=0, V is set to SPV.
+ */
+#define HSTATUS_SPV     BIT(7)
+
+/* SPVP (supervisor previous virtual privilege). When V=1 and a trap is taken
+ * into HS-mode, bit SPVP is set to the nominal privilege mode at the time
+ * of the trap, the same as sstatus.SPP. But if V=0 before a trap, SPVP is
+ * left unchanged on trap entry. SPVP controls the effective privilege of
+ * explicit memory access made by the virtual-machine load/store instructions,
+ * HLV, HLVX, and HSV.
+ */
+#define HSTATUS_SPVP    BIT(8)
+
+/* HU (hypervisor user mode) controls whether the virtual-machine load/store
+ * instructions, HLV, HLVX, and HSV, can be used also in U-mode. When HU=1,
+ * these instructions can be executed in U-mode the same as in HS-mode. When
+ * HU=0, all hypervisor instructions cause an illegal instruction trap n U-mode
+ */
+#define HSTATUS_HU      BIT(9)
+
+/* When VTVM=1, an attempt in VS-mode to execute SFENCE.VMA or to access CSR
+ * satp raises a virtual instruction exception.
+ */
+#define HSTATUS_VTVM    BIT(20)
+
+/* When VTW=1 and VS-mode tries to execute WFI, a virtual instruction exception
+ * is raised if the WFI does not complete within an implementtion-specific
+ * bounded time limit
+ */
+#define HSTATUS_VTW     BIT(21)
+
+/* When VTSR=1, an attempt in VS-mode to execute SRET raises a virtual insruction
+ * exception.
+ */
+#define HSTATUS_VTSR    BIT(22)
+
+
+static inline word_t read_hstatus(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(HSTATUS) : "=r"(r));
+    return r;
+}
+
+static inline void write_hstatus(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HSTATUS)", %0" :: "r"(v));
+}
+
+static inline void hstatus_set(word_t field)
+{
+    asm volatile("csrs "STRINGIFY(HSTATUS)", %0" :: "r"(field));
+}
+
+static inline void hstatus_clear(word_t field)
+{
+    asm volatile("csrc "STRINGIFY(HSTATUS)", %0" :: "r"(field));
+}
+
+static inline word_t read_hedeleg(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(HEDELEG) : "=r"(r));
+    return r;
+}
+
+static inline void write_hedeleg(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HEDELEG)", %0" :: "r"(v));
+}
+
+static inline word_t read_hideleg(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(HIDELEG) : "=r"(r));
+    return r;
+}
+
+static inline void write_hideleg(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HIDELEG)", %0" :: "r"(v));
+}
+
+static inline void write_hcounteren(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HCOUNTEREN)", %0" :: "r"(v));
+}
+
+static inline word_t read_hcounteren(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(HCOUNTEREN) : "=r"(r));
+    return r;
+}
+
+static inline word_t read_hgatp(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(HGATP) : "=r"(r));
+    return r;
+}
+
+static inline void write_hgatp(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HGATP)", %0" :: "r"(v));
+}
+/*
+ * HTINST may contain the following values:
+ *   zero;
+ *   a transformation of trapping instruction;
+ *   a custome value; or
+ *   a special pesudoinstruction.
+ *
+ * For interrupts, the value is always zero.
+ * For a synchronous exception, if a nonzero value is written, one
+ * of the following shall be true:
+ *   Bit 0 is 1, and replacing bit 1 with 1 makes the value into a valid
+ *   encoding of a standard instruction.
+ *
+ *   Bit 0 is 1, and replacing bit 1 with 1 makes the value into an
+ *   instruction encoding that is explicitly available for a custom
+ *   instruction.
+ *
+ *   The value is one of the special pseudoinstructions defined later, all
+ *   of which have bits 1:0 equal to 00.
+ *
+ */
+static inline word_t read_htinst(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(HTINST) : "=r"(r));
+    return r;
+}
+
+static inline void write_htinst(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HTINST)", %0" :: "r"(v));
+}
+
+/*
+ * HTVAL contains 0 or the guest physical address that faulted,
+ * shifted right by 2 bits for guest-page faults.
+ */
+static inline word_t read_htval(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(HTVAL) : "=r"(r));
+    return r;
+}
+
+static inline void write_htval(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HTVAL)", %0" :: "r"(v));
+}
+
+static inline word_t read_vsstatus(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSSTATUS) : "=r"(r));
+    return r;
+}
+
+static inline void write_hvip(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HVIP)", %0" :: "r"(v));
+}
+
+static inline word_t read_hvip(void)
+{
+    word_t r;
+    asm volatile ("csrr %0, "STRINGIFY(HVIP) : "=r"(r));
+    return r;
+}
+
+static inline void write_hip(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HIP)", %0" :: "r"(v));
+}
+
+static inline word_t read_hip(void)
+{
+    word_t r;
+    asm volatile ("csrr %0, "STRINGIFY(HIP) : "=r"(r));
+    return r;
+}
+
+static inline void write_hie(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(HIE)", %0" :: "r"(v));
+}
+
+static inline word_t read_hie(void)
+{
+    word_t r;
+    asm volatile ("csrr %0, "STRINGIFY(HIE) : "=r"(r));
+    return r;
+}
+
+static inline void write_vsstatus(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSSTATUS)", %0" :: "r"(v));
+}
+
+static inline word_t read_vsie(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSIE) : "=r"(r));
+    return r;
+}
+
+static inline void write_vsie(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSIE)", %0" :: "r"(v));
+}
+
+static inline word_t read_vstvec(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSTVEC) : "=r"(r));
+    return r;
+}
+
+static inline void write_vstvec(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSTVEC)", %0" :: "r"(v));
+}
+
+static inline word_t read_vsscratch(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSSCRATCH) : "=r"(r));
+    return r;
+}
+
+static inline void write_vsscratch(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSSCRATCH)", %0" :: "r"(v));
+}
+
+static inline word_t read_vsepc(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSEPC) : "=r"(r));
+    return r;
+}
+
+static inline void write_vsepc(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSEPC)", %0" :: "r"(v));
+}
+
+static inline word_t read_vscause(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSCAUSE) : "=r"(r));
+    return r;
+}
+
+static inline void write_vscause(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSCAUSE)", %0" :: "r"(v));
+}
+
+static inline word_t read_vstval(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSTVAL) : "=r"(r));
+    return r;
+}
+
+static inline void write_vstval(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSTVAL)", %0" :: "r"(v));
+}
+
+static inline word_t read_vsip(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSIP) : "=r"(r));
+    return r;
+}
+
+static inline void write_vsip(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSIP)", %0" :: "r"(v));
+}
+
+static inline word_t read_vsatp(void)
+{
+    word_t r;
+    asm volatile("csrr %0, "STRINGIFY(VSATP) : "=r"(r));
+    return r;
+}
+
+static inline void write_vsatp(word_t v)
+{
+    asm volatile("csrw "STRINGIFY(VSATP)", %0" :: "r"(v));
+}
+
+static inline void hfence(void)
+{
+    /* v0.4 hfence.gvma instruction */
+    asm volatile(".word 0x62000073" ::: "memory");
+}
+
+static inline uint32_t hlvw(word_t addr)
+{
+    uint32_t v = 0;
+    asm volatile("mv t0, %1\n\t"
+                // binary hlv.w t1, t0
+                ".word 0x6802c373\n\t"
+                 "mv %0, t1\n" : "=r"(v) : "r"(addr) : "t0", "t1");
+    return v;
+}
+
+/*
+ * This instruction on qemu returns incorrect instruciton.
+ * Do not use it for now.
+ */
+static inline uint32_t hlvxwu(word_t addr)
+{
+    uint32_t v = 0;
+    asm volatile("mv t0, %1\n\t"
+                // binary hlvx.wu t1, t0
+                ".word 0x6832c373\n\t"
+                 "mv %0, t1\n" : "=r"(v) : "r"(addr) : "t0", "t1");
+    return v;
+}
+
+#endif
+
 #if CONFIG_PT_LEVELS == 2
 #define SATP_MODE SATP_MODE_SV32
 #elif CONFIG_PT_LEVELS == 3
@@ -251,8 +643,34 @@ static inline void write_fcsr(uint32_t value)
 #else
 #error "Unsupported PT levels"
 #endif
+
+#define HGATP_MODE SATP_MODE
+
 static inline void setVSpaceRoot(paddr_t addr, asid_t asid)
 {
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    /* We just use the stage-2 translation */
+    hgatp_t hgatp = hgatp_new(HGATP_MODE, asid, addr >> seL4_PageBits);
+    write_hgatp(hgatp.words[0]);
+    hfence();
+#else
+    satp_t satp = satp_new(SATP_MODE,              /* mode */
+                           asid,                         /* asid */
+                           addr >> seL4_PageBits); /* PPN */
+
+    write_satp(satp.words[0]);
+
+    /* Order read/write operations */
+    sfence();
+#endif
+}
+
+
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+/* Kernel still uses the normal stage-1 translation */
+static inline void setKernelVSpaceRoot(paddr_t addr, asid_t asid)
+{
+
     satp_t satp = satp_new(SATP_MODE,              /* mode */
                            asid,                   /* asid */
                            addr >> seL4_PageBits); /* PPN */
@@ -266,6 +684,7 @@ static inline void setVSpaceRoot(paddr_t addr, asid_t asid)
     sfence();
 #endif
 }
+#endif
 
 void map_kernel_devices(void);
 
