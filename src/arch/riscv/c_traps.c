@@ -109,14 +109,14 @@ void VISIBLE NORETURN c_handle_interrupt(void)
 
 void VISIBLE NORETURN c_handle_exception(void)
 {
-#ifdef CONFIG_DEBUG_BUILD
-    if (read_sstatus() & SSTATUS_SPP) {
-        printf("\n\nKERNEL ABORT (exception within s-mode)!\n");
-        printf("scause: 0x%"SEL4_PRIx_word", stval: 0x%"SEL4_PRIx_word"\n",
-               read_scause(), read_stval());
-        halt();
-    }
-#endif
+// #ifdef CONFIG_DEBUG_BUILD
+//     if (read_sstatus() & SSTATUS_SPP) {
+//         printf("\n\nKERNEL ABORT (exception within s-mode)!\n");
+//         printf("scause: 0x%"SEL4_PRIx_word", stval: 0x%"SEL4_PRIx_word"\n",
+//                read_scause(), read_stval());
+//         halt();
+//     }
+// #endif
 
     NODE_LOCK_SYS;
 
