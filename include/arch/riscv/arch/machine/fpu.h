@@ -171,6 +171,17 @@ static inline void set_tcb_fs_state(tcb_t *tcb, bool_t enabled)
         sstatus |= SSTATUS_FS_CLEAN;
     }
     setRegister(tcb, SSTATUS, sstatus);
+
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    if (tcb->tcbArch.tcbVCPU != NULL) {
+        word_t vsstatus = read_vsstatus();
+        vsstatus &= ~SSTATUS_FS;
+        if (enabled) {
+            vsstatus |= SSTATUS_FS_CLEAN;
+        }
+        write_vsstatus(vsstatus);
+    }
+#endif
 }
 
 #endif /* end of CONFIG_HAVE_FPU */

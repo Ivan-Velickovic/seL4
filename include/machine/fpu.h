@@ -53,6 +53,11 @@ static inline void FORCE_INLINE lazyFPURestore(tcb_t *thread)
     } else {
         /* No-one (including us) is using the FPU, so we assume it
          * is currently disabled */
+#ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+        if (thread->tcbArch.tcbVCPU != NULL) {
+            enableFpu();
+        }
+#endif
     }
 }
 
