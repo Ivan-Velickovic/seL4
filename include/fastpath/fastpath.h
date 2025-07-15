@@ -75,6 +75,7 @@ static inline void ntfn_queue_dequeue_fp(tcb_t *dest, notification_t *ntfn_ptr)
 #ifdef CONFIG_EXCEPTION_FASTPATH
 static inline void fastpath_vm_fault_set_mrs(tcb_t *dest)
 {
+    // TODO: missing instruction on hypervisor mode?
     setRegister(dest, msgRegisters[0] + seL4_VMFault_IP, getRestartPC(NODE_STATE(ksCurThread)));
     setRegister(dest, msgRegisters[0] + seL4_VMFault_Addr,
                 seL4_Fault_VMFault_get_address(NODE_STATE(ksCurThread)->tcbFault));
