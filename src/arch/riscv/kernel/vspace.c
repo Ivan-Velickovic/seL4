@@ -457,6 +457,7 @@ exception_t handleVMFault(tcb_t *thread, vm_fault_type_t vm_faultType)
     addr = read_stval();
 
 #ifdef CONFIG_RISCV_HYPERVISOR_SUPPORT
+    uint64_t stval = addr;
     uint32_t instruction = 0;
 #endif
 
@@ -482,6 +483,7 @@ exception_t handleVMFault(tcb_t *thread, vm_fault_type_t vm_faultType)
     case RISCVLoadGuestPageFault:
         addr = read_htval();
         addr <<= 2;
+        addr |= (stval & 0x3);
         instruction = fetch_faulting_instruction(vm_faultType);
         current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVLoadGuestPageFault, false);
         return EXCEPTION_FAULT;
@@ -489,6 +491,7 @@ exception_t handleVMFault(tcb_t *thread, vm_fault_type_t vm_faultType)
     case RISCVStoreGuestPageFault:
         addr = read_htval();
         addr <<= 2;
+        addr |= (stval & 0x3);
         instruction = fetch_faulting_instruction(vm_faultType);
         current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVStoreGuestPageFault, false);
         return EXCEPTION_FAULT;
@@ -496,6 +499,7 @@ exception_t handleVMFault(tcb_t *thread, vm_fault_type_t vm_faultType)
     case RISCVInstructionGuestPageFault:
         addr = read_htval();
         addr <<= 2;
+        addr |= (stval & 0x3);
         current_fault = seL4_Fault_VMFault_new(addr, instruction, RISCVInstructionGuestPageFault, true);
         return EXCEPTION_FAULT;
 #else
