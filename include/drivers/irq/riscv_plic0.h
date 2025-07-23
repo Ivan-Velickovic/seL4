@@ -19,7 +19,8 @@
     !defined(CONFIG_PLAT_STAR64) && \
     !defined(CONFIG_PLAT_CHESHIRE) && \
     !defined(CONFIG_PLAT_ARIANE) && \
-    !defined(CONFIG_PLAT_HIFIVE_P550)
+    !defined(CONFIG_PLAT_HIFIVE_P550) && \
+    !defined(CONFIG_PLAT_MILKV_JUPITER)
 #error "Check if this platform supports a PLIC."
 #endif
 
