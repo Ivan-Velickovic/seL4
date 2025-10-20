@@ -63,6 +63,7 @@ BOOT_CODE static void dist_init(void)
 {
     word_t i;
     int nirqs = 32 * ((gic_dist->ic_type & 0x1f) + 1);
+    assert(nirqs <= maxIRQ);
     gic_dist->enable = 0;
 
     for (i = 0; i < nirqs; i += 32) {

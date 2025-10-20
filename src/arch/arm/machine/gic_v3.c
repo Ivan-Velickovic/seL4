@@ -163,6 +163,7 @@ BOOT_CODE static void dist_init(void)
     type = gic_dist->typer;
 
     nr_lines = GIC_REG_WIDTH * ((type & GICD_TYPE_LINESNR) + 1);
+    assert(nr_lines <= maxIRQ);
 
     /* Assume level-triggered */
     for (i = SPI_START; i < nr_lines; i += 16) {
