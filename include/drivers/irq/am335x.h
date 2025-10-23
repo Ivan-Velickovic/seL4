@@ -11,9 +11,10 @@
 #include <machine/interrupt.h>
 #include <armv/machine.h>
 
-enum irqNumbers {
-    irqInvalid = 255
-};
+/* No SGIs on this platform. */
+#define NUM_SGIS 0
+
+static const irq_t irqInvalid = 255;
 
 #define CMPER_REG(base, off) ((volatile uint32_t *)((base) + (off)))
 #define CMPER_TIMER3_CLKCTRL    0x84
@@ -118,3 +119,20 @@ static inline void handleSpuriousIRQ(void)
     dsb();
 }
 
+void setIRQTrigger(irq_t irq, bool_t trigger)
+{
+    /* Unreachable; not supported on this platform. */
+    UNREACHABLE();
+}
+
+static inline void plat_sendSGI(word_t irq, word_t target)
+{
+    /* Unreachable; not supported on this platform. */
+    UNREACHABLE();
+}
+
+static inline bool_t plat_SGITargetValid(word_t target)
+{
+    /* no SGIs on this platform */
+    return false;
+}

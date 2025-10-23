@@ -397,8 +397,8 @@ union_reader_template = \
     """%(inline)s %(type)s CONST
 %(union)s_%(block)s_get_%(field)s(%(union)s_t %(union)s) {
     %(type)s ret;
-    %(assert)s(((%(union)s.words[%(tagindex)d] >> %(tagshift)d) & 0x%(tagmask)x) ==
-           %(tagvalue)s);
+    /* fail if union does not have the expected tag */
+    %(assert)s(((%(union)s.words[%(tagindex)d] >> %(tagshift)d) & 0x%(tagmask)x) == %(tagvalue)s);
 
     ret = (%(union)s.words[%(index)d] & 0x%(mask)x%(suf)s) %(r_shift_op)s %(shift)d;
     /* Possibly sign extend */
@@ -412,9 +412,9 @@ ptr_union_reader_template = \
     """%(inline)s %(type)s PURE
 %(union)s_%(block)s_ptr_get_%(field)s(%(union)s_t *%(union)s_ptr) {
     %(type)s ret;
+    /* fail if union does not have the expected tag */
     %(assert)s(((%(union)s_ptr->words[%(tagindex)d] >> """ \
-    """%(tagshift)d) & 0x%(tagmask)x) ==
-           %(tagvalue)s);
+    """%(tagshift)d) & 0x%(tagmask)x) == %(tagvalue)s);
 
     ret = (%(union)s_ptr->words[%(index)d] & 0x%(mask)x%(suf)s) """ \
     """%(r_shift_op)s %(shift)d;
@@ -428,8 +428,8 @@ ptr_union_reader_template = \
 union_writer_template = \
     """%(inline)s %(union)s_t CONST
 %(union)s_%(block)s_set_%(field)s(%(union)s_t %(union)s, %(type)s v%(base)d) {
-    %(assert)s(((%(union)s.words[%(tagindex)d] >> %(tagshift)d) & 0x%(tagmask)x) ==
-           %(tagvalue)s);
+    /* fail if union does not have the expected tag */
+    %(assert)s(((%(union)s.words[%(tagindex)d] >> %(tagshift)d) & 0x%(tagmask)x) == %(tagvalue)s);
     /* fail if user has passed bits that we will override */
     %(assert)s((((~0x%(mask)x%(suf)s %(r_shift_op)s %(shift)d ) | 0x%(high_bits)x) & v%(base)d) == ((%(sign_extend)d && (v%(base)d & (1%(suf)s << (%(extend_bit)d)))) ? 0x%(high_bits)x : 0));
 
@@ -440,11 +440,10 @@ union_writer_template = \
 
 ptr_union_writer_template = \
     """%(inline)s void
-%(union)s_%(block)s_ptr_set_%(field)s(%(union)s_t *%(union)s_ptr,
-                                      %(type)s v%(base)d) {
+%(union)s_%(block)s_ptr_set_%(field)s(%(union)s_t *%(union)s_ptr, %(type)s v%(base)d) {
+    /* fail if union does not have the expected tag */
     %(assert)s(((%(union)s_ptr->words[%(tagindex)d] >> """ \
-    """%(tagshift)d) & 0x%(tagmask)x) ==
-           %(tagvalue)s);
+    """%(tagshift)d) & 0x%(tagmask)x) == %(tagvalue)s);
 
     /* fail if user has passed bits that we will override */
     %(assert)s((((~0x%(mask)x%(suf)s %(r_shift_op)s %(shift)d) | 0x%(high_bits)x) & v%(base)d) == ((%(sign_extend)d && (v%(base)d & (1%(suf)s << (%(extend_bit)d)))) ? 0x%(high_bits)x : 0));
@@ -946,10 +945,10 @@ proof_templates = {
     'get_tag_spec': [
         '''lemma (in ''' + loc_name + ''') %(name)s_get_%(tagname)s_spec:
   "\\<forall>s. \\<Gamma> \\<turnstile> {s}
-       \\<acute>%(ret_name)s :== ''' \
-    '''PROC %(name)s_get_%(tagname)s(\\<acute>%(name)s)
-       \\<lbrace>\\<acute>%(ret_name)s = ''' \
-    '''%(name)s_get_tag \\<^bsup>s\\<^esup>%(name)s\\<rbrace>"''',
+       \\<acute>%(ret_name)s :== '''
+        '''PROC %(name)s_get_%(tagname)s(\\<acute>%(name)s)
+       \\<lbrace>\\<acute>%(ret_name)s = '''
+        '''%(name)s_get_tag \\<^bsup>s\\<^esup>%(name)s\\<rbrace>"''',
         '''  apply(rule allI, rule conseqPre, vcg)
   apply (clarsimp)
   apply (simp add:%(name)s_get_tag_def mask_shift_simps guard_simps)
@@ -991,13 +990,13 @@ proof_templates = {
 
 
     'empty_union_new_spec': [
-        '''lemma (in ''' + loc_name + ''') ''' \
+        '''lemma (in ''' + loc_name + ''') '''
         '''%(name)s_%(block)s_new_spec:
   "\\<forall>s. \\<Gamma> \\<turnstile> {s}
-       \\<acute>ret__struct_%(name)s_C :== ''' \
-    '''PROC %(name)s_%(block)s_new()
-       \\<lbrace>%(name)s_get_tag \\<acute>ret__struct_%(name)s_C = ''' \
-     '''scast %(name)s_%(block)s\\<rbrace>"''',
+       \\<acute>ret__struct_%(name)s_C :== '''
+        '''PROC %(name)s_%(block)s_new()
+       \\<lbrace>%(name)s_get_tag \\<acute>ret__struct_%(name)s_C = '''
+        '''scast %(name)s_%(block)s\\<rbrace>"''',
         '''  apply(rule allI, rule conseqPre, vcg)
   by (clarsimp simp: guard_simps
                      %(name)s_lift_def
@@ -1008,16 +1007,16 @@ proof_templates = {
                      word_of_int_hom_syms)'''],
 
     'union_new_spec': [
-        '''lemma (in ''' + loc_name + ''') ''' \
+        '''lemma (in ''' + loc_name + ''') '''
         '''%(name)s_%(block)s_new_spec:
   "\\<forall>s. \\<Gamma> \\<turnstile> {s}
-       \\<acute>ret__struct_%(name)s_C :== ''' \
-    '''PROC %(name)s_%(block)s_new(%(args)s)
-       \\<lbrace>%(name)s_%(block)s_lift ''' \
-    '''\\<acute>ret__struct_%(name)s_C = \\<lparr>
+       \\<acute>ret__struct_%(name)s_C :== '''
+        '''PROC %(name)s_%(block)s_new(%(args)s)
+       \\<lbrace>%(name)s_%(block)s_lift '''
+        '''\\<acute>ret__struct_%(name)s_C = \\<lparr>
           %(field_eqs)s \\<rparr> \\<and>
-        %(name)s_get_tag \\<acute>ret__struct_%(name)s_C = ''' \
-     '''scast %(name)s_%(block)s\\<rbrace>"''',
+        %(name)s_get_tag \\<acute>ret__struct_%(name)s_C = '''
+        '''scast %(name)s_%(block)s\\<rbrace>"''',
         '''  apply (rule allI, rule conseqPre, vcg)
   apply (clarsimp simp: guard_simps o_def mask_def shift_over_ao_dists)
   apply (rule context_conjI[THEN iffD1[OF conj_commute]],
@@ -1079,17 +1078,17 @@ proof_templates = {
   done'''],
 
     'union_get_spec': [
-        '''lemma (in ''' + loc_name + ''') ''' \
+        '''lemma (in ''' + loc_name + ''') '''
         '''%(name)s_%(block)s_get_%(field)s_spec:
-  "\\<forall>s. \\<Gamma> \\<turnstile> ''' \
-'''\\<lbrace>s. %(name)s_get_tag \\<acute>%(name)s = ''' \
+  "\\<forall>s. \\<Gamma> \\<turnstile> '''
+        '''\\<lbrace>s. %(name)s_get_tag \\<acute>%(name)s = '''
         '''scast %(name)s_%(block)s\\<rbrace>
-       \\<acute>%(ret_name)s :== ''' \
-       '''PROC %(name)s_%(block)s_get_%(field)s(\\<acute>%(name)s)
-       \\<lbrace>\\<acute>%(ret_name)s = ''' \
-       '''%(name)s_%(block)s_CL.%(field)s_CL ''' \
-       '''(%(name)s_%(block)s_lift \\<^bsup>s\\<^esup>%(name)s)''' \
-       '''\\<rbrace>"''',
+       \\<acute>%(ret_name)s :== '''
+        '''PROC %(name)s_%(block)s_get_%(field)s(\\<acute>%(name)s)
+       \\<lbrace>\\<acute>%(ret_name)s = '''
+        '''%(name)s_%(block)s_CL.%(field)s_CL '''
+        '''(%(name)s_%(block)s_lift \\<^bsup>s\\<^esup>%(name)s)'''
+        '''\\<rbrace>"''',
         '''  apply(rule allI, rule conseqPre, vcg)
   apply (clarsimp simp:guard_simps)
   apply (simp add:%(name)s_%(block)s_lift_def)
@@ -1108,19 +1107,19 @@ proof_templates = {
   done'''],
 
     'union_set_spec': [
-        '''lemma (in ''' + loc_name + ''') ''' \
+        '''lemma (in ''' + loc_name + ''') '''
         '''%(name)s_%(block)s_set_%(field)s_spec:
-  "\\<forall>s. \\<Gamma> \\<turnstile> ''' \
-'''\\<lbrace>s. %(name)s_get_tag \\<acute>%(name)s = ''' \
+  "\\<forall>s. \\<Gamma> \\<turnstile> '''
+        '''\\<lbrace>s. %(name)s_get_tag \\<acute>%(name)s = '''
         '''scast %(name)s_%(block)s\\<rbrace>
-       \\<acute>ret__struct_%(name)s_C :== ''' \
-    '''PROC %(name)s_%(block)s_set_%(field)s(\\<acute>%(name)s, \\<acute>v%(base)d)
-       \\<lbrace>%(name)s_%(block)s_lift \\<acute>ret__struct_%(name)s_C = ''' \
-    '''%(name)s_%(block)s_lift \\<^bsup>s\\<^esup>%(name)s \\<lparr> ''' \
-        '''%(name)s_%(block)s_CL.%(field)s_CL ''' \
+       \\<acute>ret__struct_%(name)s_C :== '''
+        '''PROC %(name)s_%(block)s_set_%(field)s(\\<acute>%(name)s, \\<acute>v%(base)d)
+       \\<lbrace>%(name)s_%(block)s_lift \\<acute>ret__struct_%(name)s_C = '''
+        '''%(name)s_%(block)s_lift \\<^bsup>s\\<^esup>%(name)s \\<lparr> '''
+        '''%(name)s_%(block)s_CL.%(field)s_CL '''
         ''':= %(sign_extend)s (\\<^bsup>s\\<^esup>v%(base)d AND %(mask)s)\\<rparr> \\<and>
-        %(name)s_get_tag \\<acute>ret__struct_%(name)s_C = ''' \
-     '''scast %(name)s_%(block)s\\<rbrace>"''',
+        %(name)s_get_tag \\<acute>ret__struct_%(name)s_C = '''
+        '''scast %(name)s_%(block)s\\<rbrace>"''',
         '''  apply (rule allI, rule conseqPre, vcg)
   apply clarsimp
   apply (rule context_conjI[THEN iffD1[OF conj_commute]],
@@ -1208,7 +1207,7 @@ def emit_named(name, params, string):
     # Emit a named definition/proof, only when the given name is in
     # params.names
 
-    if(name in params.names):
+    if name in params.names:
         print(string, file=params.output)
         print(file=params.output)
 
@@ -2050,7 +2049,7 @@ class TaggedUnion:
                 tagshift = 0
                 tagindex = self.tag_index
                 tagmask = self.tag_mask
-                tagvalue = f"0x{self.expanded_tag_val(value):x}{suf}"
+                tagvalue = f"0x{self.expanded_tag_val(value):x}{suf} /* sliced tag {self.name}_{ref.name} */"
             else:
                 tagnameoffset, tagnamesize, _ = ref.field_map[self.tagname]
                 tagindex = self.tag_index
@@ -2282,7 +2281,7 @@ class TaggedUnion:
             self.classes[w] <<= self.tag_offset[w] - self.class_offset
 
         used_widths = sorted(list(used))
-        assert(len(used_widths) > 0)
+        assert len(used_widths) > 0
 
         if not self.classes:
             self.classes = {used_widths[0]: 0}

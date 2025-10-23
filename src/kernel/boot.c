@@ -39,7 +39,7 @@ BOOT_CODE p_region_t get_p_reg_kernel_img(void)
 {
     return (p_region_t) {
         .start = kpptr_to_paddr((const void *)KERNEL_ELF_BASE),
-        .end   = kpptr_to_paddr(ki_end)
+        .end   = kpptr_to_paddr((const void *)KERNEL_ELF_TOP)
     };
 }
 
@@ -140,7 +140,7 @@ BOOT_CODE static bool_t insert_region(region_t reg)
      * don't stop the boot process here, but return an error. The caller should
      * decide how bad this is.
      */
-    printf("no free memory slot left for [%"SEL4_PRIx_word"..%"SEL4_PRIx_word"],"
+    printf("no free memory slot left for [%"SEL4_PRIx_word"..%"SEL4_PRIx_word"),"
            " consider increasing MAX_NUM_FREEMEM_REG (%u)\n",
            reg.start, reg.end, (unsigned int)MAX_NUM_FREEMEM_REG);
 
@@ -327,6 +327,15 @@ BOOT_CODE void create_bi_frame_cap(cap_t root_cnode_cap, cap_t pd_cap, vptr_t vp
     write_slot(SLOT_PTR(pptr_of_cap(root_cnode_cap), seL4_CapBootInfoFrame), cap);
 }
 
+/**
+ * the size_bits we return is 0 for extra_size = 0
+ * and if it is non-zero the bits are always >= seL4_PageBits
+ * this is relied on in a few places, and gives us code of the form
+ *
+ *     extra_bi_size_bits > 0 ? BIT(extra_bi_size_bits) : 0
+ *
+ * which handles the 0-size case.
+ */
 BOOT_CODE word_t calculate_extra_bi_size_bits(word_t extra_size)
 {
     if (extra_size == 0) {
@@ -423,7 +432,7 @@ BOOT_CODE create_frames_of_region_ret_t create_frames_of_region(
 
 BOOT_CODE cap_t create_it_asid_pool(cap_t root_cnode_cap)
 {
-    cap_t ap_cap = cap_asid_pool_cap_new(IT_ASID >> asidLowBits, rootserver.asid_pool);
+    cap_t ap_cap = cap_asid_pool_cap_new(ASID_HIGH(IT_ASID) << asidLowBits, rootserver.asid_pool);
     write_slot(SLOT_PTR(pptr_of_cap(root_cnode_cap), seL4_CapInitThreadASIDPool), ap_cap);
 
     /* create ASID control cap */
@@ -591,7 +600,7 @@ BOOT_CODE void clock_sync_test(void)
 BOOT_CODE void init_core_state(tcb_t *scheduler_action)
 {
 #ifdef CONFIG_HAVE_FPU
-    NODE_STATE(ksActiveFPUState) = NULL;
+    NODE_STATE(ksCurFPUOwner) = NULL;
 #endif
 #ifdef CONFIG_DEBUG_BUILD
     /* add initial threads to the debug queue */
@@ -776,7 +785,7 @@ BOOT_CODE bool_t create_untypeds(cap_t root_cnode_cap,
             });
             if (!create_untypeds_for_region(root_cnode_cap, true, reg, first_untyped_slot)) {
                 printf("ERROR: creation of untypeds for device region #%u at"
-                       " [%"SEL4_PRIx_word"..%"SEL4_PRIx_word"] failed\n",
+                       " [%"SEL4_PRIx_word"..%"SEL4_PRIx_word") failed\n",
                        (unsigned int)i, reg.start, reg.end);
                 return false;
             }
@@ -792,7 +801,7 @@ BOOT_CODE bool_t create_untypeds(cap_t root_cnode_cap,
 
         if (!create_untypeds_for_region(root_cnode_cap, true, reg, first_untyped_slot)) {
             printf("ERROR: creation of untypeds for top device region"
-                   " [%"SEL4_PRIx_word"..%"SEL4_PRIx_word"] failed\n",
+                   " [%"SEL4_PRIx_word"..%"SEL4_PRIx_word") failed\n",
                    reg.start, reg.end);
             return false;
         }
@@ -816,7 +825,7 @@ BOOT_CODE bool_t create_untypeds(cap_t root_cnode_cap,
         ndks_boot.freemem[i] = REG_EMPTY;
         if (!create_untypeds_for_region(root_cnode_cap, false, reg, first_untyped_slot)) {
             printf("ERROR: creation of untypeds for free memory region #%u at"
-                   " [%"SEL4_PRIx_word"..%"SEL4_PRIx_word"] failed\n",
+                   " [%"SEL4_PRIx_word"..%"SEL4_PRIx_word") failed\n",
                    (unsigned int)i, reg.start, reg.end);
             return false;
         }
@@ -868,7 +877,7 @@ BOOT_CODE static bool_t check_available_memory(word_t n_available,
     /* Force ordering and exclusivity of available regions. */
     for (word_t i = 0; i < n_available; i++) {
         const p_region_t *r = &available[i];
-        printf("  [%"SEL4_PRIx_word"..%"SEL4_PRIx_word"]\n", r->start, r->end);
+        printf("  [%"SEL4_PRIx_word"..%"SEL4_PRIx_word")\n", r->start, r->end);
 
         /* Available regions must be sane */
         if (r->start > r->end) {
@@ -902,7 +911,7 @@ BOOT_CODE static bool_t check_reserved_memory(word_t n_reserved,
     /* Force ordering and exclusivity of reserved regions. */
     for (word_t i = 0; i < n_reserved; i++) {
         const region_t *r = &reserved[i];
-        printf("  [%"SEL4_PRIx_word"..%"SEL4_PRIx_word"]\n", r->start, r->end);
+        printf("  [%"SEL4_PRIx_word"..%"SEL4_PRIx_word")\n", r->start, r->end);
 
         /* Reserved regions must be sane, the size is allowed to be zero. */
         if (r->start > r->end) {

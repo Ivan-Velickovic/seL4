@@ -220,11 +220,6 @@ enum thread_control_flag {
     thread_control_update_ipc_buffer = 0x2,
     thread_control_update_space = 0x4,
     thread_control_update_mcp = 0x8,
-#ifdef CONFIG_KERNEL_MCS
-    thread_control_update_sc = 0x10,
-    thread_control_update_fault = 0x20,
-    thread_control_update_timeout = 0x40,
-#endif
 };
 #endif
 
@@ -263,6 +258,7 @@ exception_t invokeTCB_ReadRegisters(tcb_t *src, bool_t suspendSource,
 exception_t invokeTCB_WriteRegisters(tcb_t *dest, bool_t resumeTarget,
                                      word_t n, word_t arch, word_t *buffer);
 exception_t invokeTCB_NotificationControl(tcb_t *tcb, notification_t *ntfnPtr);
+void invokeDomainSetSet(tcb_t *tcb, dom_t domain);
 
 cptr_t PURE getExtraCPtr(word_t *bufferPtr, word_t i);
 void setExtraBadge(word_t *bufferPtr, word_t badge, word_t i);
